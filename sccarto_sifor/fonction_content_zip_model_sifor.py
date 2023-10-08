@@ -12,12 +12,18 @@ def content_sifor(zip_file_path, feature, parent):
         
     chemin_complet = os.path.join(zip_file_path)
     pattern_prov = r'^CF-\d{6}-\d{4}-06-LProv\.zip$'
+    pattern_prov_TV = r'^TV-\d{6}-06-LProv\.zip$'
     pattern_def = r'^CF-\d{6}-\d{4}-15-LDef\.zip$'
+    pattern_def_TV = r'^TV-\d{6}-15-LDef\.zip$'
     
     #Vérifier si le nom de fichier correspond au modèle
     if re.match(pattern_prov, fichier):
         print("Le nom du fichier '{}' est conforme.".format(fichier))
     elif re.match(pattern_def, fichier):
+        print("Le nom du fichier '{}' est conforme.".format(fichier))
+    if re.match(pattern_prov_TV, fichier):
+        print("Le nom du fichier '{}' est conforme.".format(fichier))
+    elif re.match(pattern_def_TV, fichier):
         print("Le nom du fichier '{}' est conforme.".format(fichier))
     else:
         print("Le nom du fichier '{}' est non conforme.".format(fichier))

@@ -4,13 +4,56 @@ from osgeo import ogr
 from zipfile import ZipFile
 import os
 import re
-import geopandas as gpd
 from qgis.PyQt.QtCore import QVariant
+from colorama import Fore, Back, Style
+
 
 
 @qgsfunction(args='auto', group='Custom')
 # le paramètre layers est le chemin du dossier
 def display_sifor(zip_file, feature, parent):
+    print("-" * 140)
+    print("---------- V1: VERIFICATION DU NOM DU FICHIER LE FICHIER ZIP ----------")
+    print(Fore.RED + 'NC')
+    resultat_analyse = []
+    fichier = os.path.basename(zip_file)
+    chemin_complet = os.path.join(zip_file)
+    pattern_prov = r'^CF-\d{6}-\d{4}-06-LProv\.zip$'
+    pattern_prov_TV = r'^TV-\d{6}-06-LProv\.zip$'
+    pattern_def = r'^CF-\d{6}-\d{4}-15-LDef\.zip$'
+    pattern_def_TV = r'^TV-\d{6}-15-LDef\.zip$'
+    
+    #Vérifier si le nom de fichier correspond au modèle
+    if re.match(pattern_prov, fichier) or re.match(pattern_def, fichier) or re.match(pattern_prov_TV, fichier) or re.match(pattern_def_TV, fichier):
+        print("Le nom du fichier '{}' est conforme.".format(fichier))
+    else:
+        resultat_analyse.append("Non conforme")
+        print("Le nom du fichier '{}' est non conforme.".format(fichier))
+    
+    print("")
+    print("-" * 140)
+    print("---------- V2: LE FICHIER ZIP DOIT CONTENIR LES 4 FICHIERS SUIVANTS POUR LE POINT ET LA POLYGONE : .shp, .prj, .dbf, .shx ----------")
+    # Charger le fichier ZIP
+    zip_path = str(zip_file)
+    # Vérifier si le chemin du fichier ZIP existe
+    if os.path.exists(zip_path):
+        # Ouvrir le fichier ZIP en mode lecture
+        with ZipFile(zip_path, 'r') as zip_ref:
+            # Obtenir la liste des fichiers dans le ZIP
+            file_list = zip_ref.namelist()
+
+        # Créer une chaîne de texte avec la liste des fichiers
+        content_text = "\n".join(file_list)
+
+        # Afficher le contenu dans la console
+        print(content_text)
+        
+        # Vous pouvez également enregistrer le contenu dans un fichier ou le renvoyer en tant que résultat selon vos besoins
+
+    else:
+        QgsMessageLog.logMessage("Le fichier ZIP spécifié n'existe pas.", "MonPlugin", QgsMessageLog.CRITICAL)
+    print(" ")
+    print("-" * 148)
     print("-------------- V3 & V4 : VERIFICATION DE LA GEOMETRIE ET LES SYSTÈMES  DE COORDONNÉES DES COUCHES --------------")
     zip_file_name = os.path.splitext(zip_file)[0]
     # Créez un dossier pour sauvegarder le contenu du ZIP s'il n'existe pas déjà
@@ -58,6 +101,7 @@ def display_sifor(zip_file, feature, parent):
             elif crs == 'EPSG:32630':
                 print("Le fichier '{}' a pour système de coordonnée: {}. Ce système est autorisé.".format(nom_couche, "EPSG:32630"))
             else:
+                resultat_analyse.append("Non conforme")
                 print("Le fichier '{}' a pour système de coordonnée: {}. Ce système n'est pas autorisé.".format(nom_couche, crs))
     print(" ")
     print("-" * 148)
@@ -74,7 +118,10 @@ def display_sifor(zip_file, feature, parent):
             if geom == QgsWkbTypes.MultiPolygon:
                 if nom_couche.startswith("CF_Polyg_"):
                     print("Le fichier {} est préfixé par '{}' donc le nom est conforme.".format(nom_couche, "CF_Polyg_"))
+                elif nom_couche.startswith("DTV_Polyg_"):
+                    print("Le fichier {} est préfixé par '{}' donc le nom est conforme.".format(nom_couche, "DTV_Polyg_"))
                 else:
+                    resultat_analyse.append("Non conforme")
                     print("Le préfixe du fichier {} n'est pas conforme.".format(nom_couche))
     
     print(" ")
@@ -92,7 +139,10 @@ def display_sifor(zip_file, feature, parent):
             if geom == QgsWkbTypes.Point:
                 if nom_couche.startswith("CF_Points_"):
                     print("Le fichier {} est préfixé par '{}' donc le nom est conforme.".format(nom_couche, "CF_Points_"))
+                elif nom_couche.startswith("DTV_Points_"):
+                    print("Le fichier {} est préfixé par '{}' donc le nom est conforme.".format(nom_couche, "DTV_Points_"))
                 else:
+                    resultat_analyse.append("Non conforme")
                     print("Le préfixe du fichier {} n'est pas conforme.".format(nom_couche))
                     
     print(" ")
@@ -116,6 +166,7 @@ def display_sifor(zip_file, feature, parent):
     if len(noms_de_bas) == 1:
         print("Tous les fichiers de type polygone préfixé par 'CF_Polyg_' ont le même nom.")
     else:
+        resultat_analyse.append("Non conforme")
         print("Tous les fichiers de type polygone préfixé par 'CF_Polyg_' n'ont pas le même nom.")
     
     
@@ -137,6 +188,7 @@ def display_sifor(zip_file, feature, parent):
     if len(noms_de_base) == 1:
         print("Tous les fichiers de type point préfixé par 'CF_Point_' ont le même nom.")
     else:
+        resultat_analyse.append("Non conforme")
         print("Tous les fichiers de type point préfixé par 'CF_Point_' n'ont pas le même nom.")
     
     print(" ")
@@ -163,6 +215,7 @@ def display_sifor(zip_file, feature, parent):
                 if poly_crs == point_crs:
                     print('Vu ce qui précède on en déduit que le système de coordonnées du fichier point est identique à celui du polygone dont scr = {}.'.format(poly_crs))
                 else:
+                    resultat_analyse.append("Non conforme")
                     print('Vu ce qui précède on en déduit que le système de coordonnées du fichier de type point n\'est pas identique à celui du polygone.')
 
     print(" ")
@@ -190,6 +243,7 @@ def display_sifor(zip_file, feature, parent):
                 elif extra_fields:
                     print(" Ce Champ '{}' est inattendu donc le format de la table attributaire de la couche '{}' donc la table n'est pas conforme.".format(extra_fields[0], polygon_file))
                 else:
+                    resultat_analyse.append("Non conforme")
                     print("Ce format des champs de la table attributaire de la couche '{}' est conforme.".format(polygon_file))
                 
     
@@ -219,6 +273,7 @@ def display_sifor(zip_file, feature, parent):
                 elif extra_fields:
                     print(" Ce Champ '{}' est inattendu donc le format de la table attributaire de la couche '{}' donc la table n'est pas conforme.".format(extra_fields[0], point_file))
                 else:
+                    resultat_analyse.append("Non conforme")
                     print("Ce format des champs de la table attributaire de la couche '{}' est conforme.".format(point_file))
                 
     
@@ -242,9 +297,9 @@ def display_sifor(zip_file, feature, parent):
                         if str(entite[colonne]) == "NULL" or str(entite[colonne]) is None:
                             print(f"Le champ '{colonne}' contient une valeur nulle à la ligne {entite.id() +1}.")
                         else:
+                            resultat_analyse.append("Non conforme")
                             print(f"Le champ '{colonne}' est conforme car il ne contient pas de valeurs nulles.")
                 
-    
     print(" ")
     print("-" * 148)
     print("-------------- V12: VERIFICATION DES CHAMPS OBLIGATOIRES DES COLONNES  DU POINT --------------")
@@ -265,4 +320,13 @@ def display_sifor(zip_file, feature, parent):
                     if champs_nuls:
                         print("\n".join(champs_nuls))
                     else:
+                        resultat_analyse.append("Non conforme")
                         print(f"Le champ '{colonne}' est conforme car il ne contient pas de valeurs nulles.")
+                        
+    print(" ")
+    print("-" * 148)
+    print("-------------- RESULTAT DE L'ANALYSE --------------")
+    if "Non conforme" in resultat_analyse:
+        print("Les données chargées sont invalides car elles contiennent {} points de contrôle non conforme.\nVeuillez consulter ces points ci dessus.".format(len(resultat_analyse)))
+    else:
+        print("Les données chargées sont valides.")
