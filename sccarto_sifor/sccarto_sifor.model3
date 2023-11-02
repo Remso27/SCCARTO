@@ -1,95 +1,95 @@
 <!DOCTYPE model>
 <Option type="Map">
-  <Option type="Map" name="children">
-    <Option type="Map" name="native:loadlayer_1">
-      <Option type="bool" name="active" value="true"/>
+  <Option name="children" type="Map">
+    <Option name="native:loadlayer_1" type="Map">
+      <Option name="active" value="true" type="bool"/>
       <Option name="alg_config"/>
-      <Option type="QString" name="alg_id" value="native:loadlayer"/>
-      <Option type="QString" name="color" value=""/>
-      <Option type="Map" name="comment">
-        <Option type="QString" name="color" value=""/>
-        <Option type="QString" name="component_description" value=""/>
-        <Option type="double" name="component_height" value="60"/>
-        <Option type="double" name="component_pos_x" value="320"/>
-        <Option type="double" name="component_pos_y" value="115"/>
-        <Option type="double" name="component_width" value="100"/>
-        <Option type="bool" name="outputs_collapsed" value="true"/>
-        <Option type="bool" name="parameters_collapsed" value="true"/>
+      <Option name="alg_id" value="native:loadlayer" type="QString"/>
+      <Option name="color" value="" type="QString"/>
+      <Option name="comment" type="Map">
+        <Option name="color" value="" type="QString"/>
+        <Option name="component_description" value="" type="QString"/>
+        <Option name="component_height" value="60" type="double"/>
+        <Option name="component_pos_x" value="320" type="double"/>
+        <Option name="component_pos_y" value="115" type="double"/>
+        <Option name="component_width" value="100" type="double"/>
+        <Option name="outputs_collapsed" value="true" type="bool"/>
+        <Option name="parameters_collapsed" value="true" type="bool"/>
       </Option>
-      <Option type="QString" name="component_description" value="Décompresser le fichier zip"/>
-      <Option type="double" name="component_height" value="37"/>
-      <Option type="double" name="component_pos_x" value="121"/>
-      <Option type="double" name="component_pos_y" value="200.5"/>
-      <Option type="double" name="component_width" value="200"/>
+      <Option name="component_description" value="Décompresser le fichier zip" type="QString"/>
+      <Option name="component_height" value="37" type="double"/>
+      <Option name="component_pos_x" value="121" type="double"/>
+      <Option name="component_pos_y" value="200.5" type="double"/>
+      <Option name="component_width" value="200" type="double"/>
       <Option name="dependencies"/>
-      <Option type="QString" name="id" value="native:loadlayer_1"/>
+      <Option name="id" value="native:loadlayer_1" type="QString"/>
       <Option name="outputs"/>
-      <Option type="bool" name="outputs_collapsed" value="true"/>
-      <Option type="bool" name="parameters_collapsed" value="true"/>
-      <Option type="Map" name="params">
-        <Option type="List" name="INPUT">
+      <Option name="outputs_collapsed" value="true" type="bool"/>
+      <Option name="parameters_collapsed" value="true" type="bool"/>
+      <Option name="params" type="Map">
+        <Option name="INPUT" type="List">
           <Option type="Map">
-            <Option type="QString" name="expression" value=" content_sifor(@Importerlesdonnesenformatzip) "/>
-            <Option type="int" name="source" value="3"/>
+            <Option name="expression" value=" content_sifor(@Importerlesdonnesenformatzip) " type="QString"/>
+            <Option name="source" value="3" type="int"/>
           </Option>
         </Option>
-        <Option type="List" name="NAME">
+        <Option name="NAME" type="List">
           <Option type="Map">
-            <Option type="QString" name="expression" value=" display_sifor(@Importerlesdonnesenformatzip)"/>
-            <Option type="int" name="source" value="3"/>
+            <Option name="expression" value=" display_sifor(@Importerlesdonnesenformatzip)" type="QString"/>
+            <Option name="source" value="3" type="int"/>
           </Option>
         </Option>
       </Option>
     </Option>
   </Option>
-  <Option type="Map" name="designerParameterValues">
-    <Option type="QString" name="Importerlesdonnesenformatzip" value="E:\AFOR\DONNEES_TEST\CF_PAMOFOR\FICHIER_MODIFIE\CF-002007-0001-06-LProv.zip"/>
+  <Option name="designerParameterValues" type="Map">
+    <Option name="Importerlesdonnesenformatzip" value="E:\AFOR\DONNEES_TEST\CF_PAMOFOR\FICHIER_MODIFIE\CF-002007-0001-06-LProv.zip" type="QString"/>
   </Option>
   <Option name="groupBoxes"/>
   <Option name="help"/>
-  <Option type="QString" name="internal_version" value="Version1"/>
+  <Option name="internal_version" value="Version1" type="QString"/>
   <Option name="modelVariables"/>
-  <Option type="QString" name="model_group" value=""/>
-  <Option type="QString" name="model_name" value="sccarto_sifor"/>
-  <Option type="QString" name="outputGroup" value=""/>
+  <Option name="model_group" value="" type="QString"/>
+  <Option name="model_name" value="sccarto_sifor" type="QString"/>
+  <Option name="outputGroup" value="" type="QString"/>
   <Option name="outputOrder"/>
-  <Option type="Map" name="parameterDefinitions">
-    <Option type="Map" name="Importerlesdonnesenformatzip">
-      <Option type="int" name="behavior" value="0"/>
-      <Option type="QString" name="default" value="C:\Users\USER\Desktop\data\shapefiles.zip"/>
-      <Option type="invalid" name="defaultGui"/>
-      <Option type="QString" name="description" value="Importer les données en format(.zip)"/>
-      <Option type="QString" name="extension" value=""/>
-      <Option type="QString" name="filefilter" value="Tous les fichiers (*.*)"/>
-      <Option type="int" name="flags" value="0"/>
-      <Option type="QString" name="help" value=""/>
+  <Option name="parameterDefinitions" type="Map">
+    <Option name="Importerlesdonnesenformatzip" type="Map">
+      <Option name="behavior" value="0" type="int"/>
+      <Option name="default" value="C:\Users\USER\Desktop\data\shapefiles.zip" type="QString"/>
+      <Option name="defaultGui" type="invalid"/>
+      <Option name="description" value="Importer les données en format(.zip)" type="QString"/>
+      <Option name="extension" value="" type="QString"/>
+      <Option name="filefilter" value="Tous les fichiers (*.*)" type="QString"/>
+      <Option name="flags" value="0" type="int"/>
+      <Option name="help" value="" type="QString"/>
       <Option name="metadata"/>
-      <Option type="QString" name="name" value="Importerlesdonnesenformatzip"/>
-      <Option type="QString" name="parameter_type" value="file"/>
+      <Option name="name" value="Importerlesdonnesenformatzip" type="QString"/>
+      <Option name="parameter_type" value="file" type="QString"/>
     </Option>
   </Option>
   <Option name="parameterOrder"/>
-  <Option type="Map" name="parameters">
-    <Option type="Map" name="Importerlesdonnesenformatzip">
-      <Option type="QString" name="color" value=""/>
-      <Option type="Map" name="comment">
-        <Option type="QString" name="color" value=""/>
-        <Option type="QString" name="component_description" value=""/>
-        <Option type="double" name="component_height" value="60"/>
-        <Option type="double" name="component_pos_x" value="320"/>
-        <Option type="double" name="component_pos_y" value="15"/>
-        <Option type="double" name="component_width" value="100"/>
-        <Option type="bool" name="outputs_collapsed" value="true"/>
-        <Option type="bool" name="parameters_collapsed" value="true"/>
+  <Option name="parameters" type="Map">
+    <Option name="Importerlesdonnesenformatzip" type="Map">
+      <Option name="color" value="" type="QString"/>
+      <Option name="comment" type="Map">
+        <Option name="color" value="" type="QString"/>
+        <Option name="component_description" value="" type="QString"/>
+        <Option name="component_height" value="60" type="double"/>
+        <Option name="component_pos_x" value="320" type="double"/>
+        <Option name="component_pos_y" value="15" type="double"/>
+        <Option name="component_width" value="100" type="double"/>
+        <Option name="outputs_collapsed" value="true" type="bool"/>
+        <Option name="parameters_collapsed" value="true" type="bool"/>
       </Option>
-      <Option type="QString" name="component_description" value="Importerlesdonnesenformatzip"/>
-      <Option type="double" name="component_height" value="34"/>
-      <Option type="double" name="component_pos_x" value="120"/>
-      <Option type="double" name="component_pos_y" value="62"/>
-      <Option type="double" name="component_width" value="200"/>
-      <Option type="QString" name="name" value="Importerlesdonnesenformatzip"/>
-      <Option type="bool" name="outputs_collapsed" value="true"/>
-      <Option type="bool" name="parameters_collapsed" value="true"/>
+      <Option name="component_description" value="Importerlesdonnesenformatzip" type="QString"/>
+      <Option name="component_height" value="34" type="double"/>
+      <Option name="component_pos_x" value="120" type="double"/>
+      <Option name="component_pos_y" value="62" type="double"/>
+      <Option name="component_width" value="200" type="double"/>
+      <Option name="name" value="Importerlesdonnesenformatzip" type="QString"/>
+      <Option name="outputs_collapsed" value="true" type="bool"/>
+      <Option name="parameters_collapsed" value="true" type="bool"/>
     </Option>
   </Option>
 </Option>
