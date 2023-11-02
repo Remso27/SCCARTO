@@ -10,16 +10,17 @@ from qgis.PyQt.QtCore import QVariant
 # le paramètre layers est le chemin du dossier
 def display_sifor(zip_file, feature, parent):
     resultat_analyse = []
-    print("-" * 132)
+    print("-" * 118)
     print("---------- Le shapefile doit être fourni au format compressé (.zip). ----------")
     
     if ZipFile(zip_file, "r"):
         print("Le shapefile est fourni au format .zip.")
     else :
-        print(" Le shapefile n'est pas fourni au format .zip")
+        resultat_analyse.append("Non conforme")
+        print("==>000 Le shapefile n'est pas fourni au format .zip")
     
     print("")
-    print("-" * 132)
+    print("-" * 118)
     fichier = os.path.basename(zip_file)
     chemin_complet = os.path.join(zip_file)
     pattern_prov = r'^CF-\d{6}-\d{5}-06-LPProv\.zip$'
@@ -89,7 +90,7 @@ def display_sifor(zip_file, feature, parent):
         print("==>000 Le nom du fichier zip ne respecte pas la spécification.")
     
     print("")
-    print("-" * 132)
+    print("-" * 118)
     print("---------- Le zip doit contenir les 4 fichiers suivants pour le point et la polygone : .shp, .prj, .dbf, .shx ----------")
     contenu_zip = set()
     # Charger le fichier ZIP
@@ -115,15 +116,16 @@ def display_sifor(zip_file, feature, parent):
                 contenu_zip.add(fichier)
             elif fichier.endswith(".shx") or fichier.endswith(".SHX"):
                 contenu_zip.add(fichier)
-        if len(contenu_zip) == 8:
+        if len(contenu_zip) % 2 == 0:
             print("Le zip contient les 4 fichiers requis : .shp, .prj, .dbf, .shx")
         else:
-            print("Le zip ne contient pas les 4 fichiers requis : .shp, .prj, .dbf, .shx")
+            resultat_analyse.append("Non conforme")
+            print("==>000 Le zip ne contient pas les 4 fichiers requis : .shp, .prj, .dbf, .shx")
     else:
         QgsMessageLog.logMessage("Le fichier ZIP spécifié n'existe pas.", "MonPlugin", QgsMessageLog.CRITICAL)
     
     print(" ")
-    print("-" * 132)
+    print("-" * 118)
     geom_layer = set()
     zip_file_name = os.path.splitext(zip_file)[0]
     # Créez un dossier pour sauvegarder le contenu du ZIP s'il n'existe pas déjà
@@ -155,21 +157,26 @@ def display_sifor(zip_file, feature, parent):
             else:
                 print("Impossible de charger la couche vecteur depuis {}.".format(chemin_fichier))
             # Vérifier le type de géométrie de la couche
-            if couche.geometryType() == QgsWkbTypes.PointGeometry or couche.geometryType() == QgsWkbTypes.PolygonGeometry:
-                geom_layer.add("PointPolyg")
-            elif couche.geometryType() == QgsWkbTypes.LineGeometry or couche.geometryType() == QgsWkbTypes.PointGeometry:
-                geom_layer.add("PointLine")
+            if couche.geometryType() == QgsWkbTypes.PointGeometry:
+                geom_layer.add("Point")
+            elif couche.geometryType() == QgsWkbTypes.PolygonGeometry:
+                geom_layer.add("Polyg")
+            elif couche.geometryType() == QgsWkbTypes.LineGeometry:
+                geom_layer.add("Line")
     #print(geom_layer)
-    if len(geom_layer) == 1:
+    if "Point" in geom_layer and "Polyg" in geom_layer:
         print("---------- Le fichier .zip doit contenir : Un fichier Shape de type Polygone et Point. ----------")
         print("Le zip contient un shape de type Polygone et Point.")
-    elif len(geom_layer) == 2:
+    elif "Point" in geom_layer and "Line" in geom_layer:
         print("---------- Le fichier .zip doit contenir : Un fichier Shape de type Ligne et Point. ----------")
         print("Le zip contient un shape de type Ligne et Point.")
     else :
-        print("Le zip ne contient pas un shape de type Polygone et Point.")
+        print("---------- Vérifier les géometries des données chargées ----------")
+        resultat_analyse.append("Non conforme")
+        print("==>000 Les géometries des données chargées ne sont pas repectées.")
         
     print("")
+    print("-" * 118)
     print("-------------- Les systèmes de coordonnées autorisés sont EPSG:32629 et EPSG:32630 --------------")
     crs_layer = set()
     zip_file_name = os.path.splitext(zip_file)[0]
@@ -212,10 +219,9 @@ def display_sifor(zip_file, feature, parent):
     if 'EPSG:32629' in crs_layer or 'EPSG:32630' in crs_layer:
         print("Le système de coordonnées correspond à ceux autorisés  EPSG:32629 et EPSG:32630.")
     else:
-        print("Le système de coordonnées ne correspond pas à ceux autorisés  EPSG:32629 et EPSG:32630.")
+        resultat_analyse.append("Non conforme")
+        print("==>000 Le système de coordonnées ne correspond pas à ceux autorisés  EPSG:32629 et EPSG:32630.")
         
-    #print(" ")
-    #print("-" * 132)
     #print("-------------- V5: VERIFICATION DES PREFIXES DES FICHIERS DE TYPE POLYGONE --------------")
     for fichier in os.listdir(output_folder):
         chemin_fichier = os.path.join(output_folder, fichier)
@@ -229,30 +235,34 @@ def display_sifor(zip_file, feature, parent):
             if geom == QgsWkbTypes.PolygonGeometry:
                 if nom_couche.startswith("CF_Polyg_"):
                     print(" ")
-                    print("-" * 132)
+                    print("-" * 118)
                     print("-------------- Vérifier que le nom des fichiers du Shape de la polygo doit être préfixé par <CF_Polyg_>. --------------")
                     print("Le nom des fichiers du Shape du polygo est bien préfixé.")
                 elif nom_couche.startswith("DTV_Polyg_"):
                     print(" ")
-                    print("-" * 132)
+                    print("-" * 118)
                     print("-------------- Vérifier que le nom des fichiers du Shape de la polygo doit être préfixé par <DTV_Polyg_>. --------------")
-                    print("Le nom des fichiers du Shape de la polygo est bien préfixé.")
+                    print("Le nom des fichiers du Shape du polygone est bien préfixé.")
                 else:
-                    resultat_analyse.append("Non conforme")
-                    print(" Le nom des fichiers du Shape de la polygo n'est pas bien préfixé")
                     print(" ")
-                    print("-" * 132)
+                    print("-" * 118)
+                    resultat_analyse.append("Non conforme")
+                    print("-------------- Vérifier les préfixes du Shape du polygone --------------")
+                    print("==>000 Le nom des fichiers du Shape du polygone n'est pas bien préfixé")
             elif geom == QgsWkbTypes.LineGeometry:
                 print(" ")
-                print("-" * 132)
+                print("-" * 118)
                 print("-------------- Vérifier que le nom des fichiers du Shape des tronçons doit être préfixé par <DTV_Lignes_> --------------")
                 if nom_couche.startswith("DTV_Lignes_"):
                     print("Le nom des fichiers du Shape du tronçon est bien préfixé.")
                 else:
                     resultat_analyse.append("Non conforme")
-                    print("Le nom des fichiers du Shape du tronçon n'est pas bien préfixé.")
+                    print("==>000 Le nom des fichiers du Shape du tronçon n'est pas bien préfixé.")
+            
+    
+    
     print(" ")
-    print("-" * 132)
+    print("-" * 118)
     for fichier in os.listdir(output_folder):
         chemin_fichier = os.path.join(output_folder, fichier)
         # Vérifier si le fichier a une extension de shapefile
@@ -270,11 +280,12 @@ def display_sifor(zip_file, feature, parent):
                     print("-------------- Vérifier que le nom des fichiers du Shape du point doit être préfixé par <DTV_Points_> --------------")
                     print("Le nom des fichiers du Shape du point est bien préfixé.")
                 else:
+                    print("-------------- Vérifier les préfixes du Shape du point --------------")
                     resultat_analyse.append("Non conforme")
-                    print("Le nom des fichiers du Shape du point n'est pas bien préfixé.")
+                    print("==>000 Le nom des fichiers du Shape du point n'est pas bien préfixé.")
                     
     print(" ")
-    print("-" * 132)
+    print("-" * 118)
     extensions_supportees = ['.shp','.SHP']
     # Obtenir la liste des fichiers dans le dossier
     fichiers = [fichier for fichier in os.listdir(output_folder) if os.path.isfile(os.path.join(output_folder, fichier))]
@@ -314,20 +325,20 @@ def display_sifor(zip_file, feature, parent):
                     nom.add("ok")
                 elif "DTV_Points_" in noms_de_bas and (fichier.startswith("DTV_Points_") and fichier.endswith(".shp")):
                     nom.add("ok")
-            else: 
-                resultat_analyse.append("Non conforme")
-                print("==>000 Les préfixes des fichiers ne sont pas ne sont pas respectés.")
-                break
+            #else: 
+            #    resultat_analyse.append("Non conforme")
+            #    print("==>000 Les préfixes des fichiers ne sont pas ne sont pas respectés.")
+            #    break
     if "ok" in nom :
         print("Tous les fichiers ont le même nom.")
     else:
         resultat_analyse.append("Non conforme")
-        print("==>000 Tous les fichiers n'ont pas le même nom.")
+        print("==>000 Les noms des fichiers ne respectent pas la spécification.")
     
     print(" ")
-    print("-" * 132)
+    print("-" * 118)
     #print("-------------- V8: VERIFICATION DU SYSTEME DE COORDONNEES DES FICHIERS DE TYPE POLYGONE ET DE TYPE POINT --------------")
-    crs = couche.crs().authid()
+    #crs = couche.crs().authid()
     point_sys = set()
     poly_sys = set()
     ligne_sys = set()
@@ -368,17 +379,17 @@ def display_sifor(zip_file, feature, parent):
             
     
     print(" ")
-    print("-" * 132)
+    print("-" * 118)
     #print("-------------- V9: VERIFICATION DU FORMAT DES COLONNES DU POLYGONE --------------")
     fichiers = [fichier for fichier in os.listdir(output_folder) if os.path.isfile(os.path.join(output_folder, fichier))]
     colonnes_cf = [
         'NUM_DOSS', 'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF',
-        'NOM_VILLAG', 'NOM_DEMAND', 'SUPERF', 'PERIM']
+        'NOM_VILLAG', 'NOM_DEMAND', 'SUPERF', 'PERIM', 'NOM_PROJET', 'NOM_OTA']
     colonnes_requises_dtv = [
         'NBTRONCONS', 'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF',
         'NOM_VILLAG','ID_VILLAGE', 'SUPERF', 'PERIM']
     colonne_troncon = [
-         'TYPELIMITE', 'POSITION','VILLAGEVOI','TYPE_NATUR','LONG_LEVE', 'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF',
+        'TYPELIMITE', 'POSITION','VILLAGEVOI','TYPE_NATUR','LONG_LEVE', 'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF',
         'NOM_VILLAG']
     for fichier in fichiers:
         if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
@@ -390,7 +401,7 @@ def display_sifor(zip_file, feature, parent):
             if layer_polygon.geometryType() == QgsWkbTypes.PolygonGeometry:
                 print("--------------  Vérifier que le format des colonnes du polygone est respecté --------------")
                 # CF
-                if nom_couche.startswith("CF_Polyg_"):
+                if nom_couche.startswith("CF"):
                     forma_cf = []
                     taille_cf = []
                     attribute_fields = [field.name() for field in layer_polygon.fields()]
@@ -422,7 +433,7 @@ def display_sifor(zip_file, feature, parent):
                                 #    else:
                                 #        taille_cf.append("Ok")
                                 if colonne == "NOM_DEMAND":
-                                    if champ.length() != 100:
+                                    if not 50 <= champ.length() <= 100:
                                         taille_cf.append("No")
                                         resultat_analyse.append("Non conforme")
                                         print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (100).".format(colonne, champ.length()))
@@ -456,14 +467,9 @@ def display_sifor(zip_file, feature, parent):
                                     taille_cf.append("Ok")
                                     #print("Colonne '{}': Longueur = {}".format(colonne,  champ.length()))
                             elif champ.type() == QVariant.Double:
-                                if colonne == "SUPERF":
-                                    precision = champ.precision()
-                                    if champ.length() != 20 and precision != 4:
-                                        taille_cf.append("No")
-                                        resultat_analyse.append("Non conforme")
-                                        print("==>000 La taille de colonne '{}' est = {} avec une précision de {}, elle ne respecte pas la taille (20) et la précision (2) attendues.".format(colonne, champ.length(), precision))
-                                else:
-                                    taille_cf.append("Ok")
+                                taille_cf.append("Ok")
+                                #print("==>000 La taille de colonne '{}' est = {} avec une précision de {}, elle ne respecte pas la taille (20) et la précision (2) attendues.".format(colonne, champ.length(), precision))
+                                
                             
                     #print(forma_cf)
                     #print(taille_cf)
@@ -475,7 +481,7 @@ def display_sifor(zip_file, feature, parent):
                         print("Le format des colonnes du Polygone n'est pas respecté.")
                     else:
                         print(" Le format des colonnes du Polygone est respecté")
-                elif nom_couche.startswith("DTV_Polyg_"):
+                elif nom_couche.startswith("DTV"):
                     forma_dtv = []
                     taille_dtv = []
                     attribute_fields = [field.name() for field in layer_polygon.fields()]
@@ -651,11 +657,11 @@ def display_sifor(zip_file, feature, parent):
                     print(" Le format des colonnes du Tronçon est respecté.")        
                 
     print(" ")
-    print("-" * 132)
+    print("-" * 118)
     print("-------------- Vérifier que le format des colonnes du point est respecté --------------")
-    champs_requis_cf = ['TYP_LEVE', 'PRECISLEVE', 'AMORCE', 'NUM_DOSS', 'NOM_REGION', 'NOM_DEPART', 
+    champs_requis_cf = ['NUM_DOSS', 'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF',  'NOM_DEPART', 
         'NOM_SSPREF', 'NOM_VILLAG', 'NUM_SOMMET', 'COORD_X', 'COORD_Y', 
-         'TYP_SOMMET', 'SOMM_SUIV', 'DIST_SUIV', 'NUM_LIMIT', 'NOM_VOIS', "NOM_OTA"]
+         'TYP_SOMMET','TYP_LEVE', 'SOMM_SUIV', 'NOM_PROJET','DIST_SUIV', 'NUM_LIMIT', 'NOM_VOIS', "NOM_OTA"]
     champs_requis_dtv = [ 'TYP_LEVE', 'AMORCE', 'NOM_REGION', 'NOM_DEPART', 
         'NOM_SSPREF', 'NOM_VILLAG', 'NUM_SOMMET', 'COORD_X', 'COORD_Y', 
          'TYP_SOMMET', 'SOMM_SUIV', 'DIST_SUIV', 'NOM_VOIS', "NUM_TRONC"]
@@ -669,7 +675,7 @@ def display_sifor(zip_file, feature, parent):
             layer_point = QgsVectorLayer(point_path, point_file, "ogr")
             point = couche.wkbType()
             if layer_point.geometryType() == QgsWkbTypes.PointGeometry:
-                if point_file.startswith("CF_Points_"):
+                if point_file.startswith("CF"):
                     forma_pt_cf = []
                     taille_pt_cf = []
                     attribute_fields = [field.name() for field in layer_point.fields()]
@@ -680,7 +686,7 @@ def display_sifor(zip_file, feature, parent):
                     if missing_fields:
                         resultat_analyse.append("Non conforme")
                         forma_pt_cf.append("No")
-                        print(f"==>000 Il manque le champ '{', '.join(missing_fields)}' dans la liste des champs de la table attributaire de la couche '{point_file}'.")
+                        print(f"==>000 Il manque le(s) champ(s) '{', '.join(missing_fields)}' dans la liste des champs de la table attributaire de la couche '{point_file}'.")
                     #elif extra_fields:
                     #    print(" Ce Champ '{}' est inattendu donc le format de la table attributaire de la couche '{}' donc la table n'est pas conforme.".format(extra_fields[0], point_file))
                     else:
@@ -690,17 +696,7 @@ def display_sifor(zip_file, feature, parent):
                         champ = layer_polygon.fields().field(colonne)
                         # Vérifier si le champ est de type String
                         if champ.type() == QVariant.String:
-                            #if colonne == "NO_TRANS":
-                            #    if champ.length() != 15:
-                            #        taille_pt_cf.append("No")
-                            #        resultat_analyse.append("Non conforme")
-                            #        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (15).".format(colonne, champ.length()))
                             if colonne == "TYP_LEVE":
-                                if champ.length() != 50:
-                                    taille_pt_cf.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                            elif colonne == "PRECISLEVE":
                                 if champ.length() != 50:
                                     taille_pt_cf.append("No")
                                     resultat_analyse.append("Non conforme")
@@ -754,12 +750,19 @@ def display_sifor(zip_file, feature, parent):
                                     taille_pt_cf.append("No")
                                     resultat_analyse.append("Non conforme")
                                     print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                            
+                            elif colonne == "NOM_PROJET":
+                                if champ.length() != 50:
+                                    taille_pt_cf.append("No")
+                                    resultat_analyse.append("Non conforme")
+                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
                             else:
                                 taille_pt_cf.append("Ok")
                                 #print("Colonne '{}': Longueur = {}".format(colonne,  champ.length()))
                         
                                 #print("Colonne '{}': Longueur = {}.{}".format(colonne,  champ.length(), precision))
+                        elif champ.type() == QVariant.Double:
+                            taille_pt_cf.append("Ok")
+                        
                     if "No" in forma_pt_cf and "No" in taille_pt_cf:
                             print("Le format des colonnes du Point n'est pas respecté.")
                     elif "No" in forma_pt_cf and "Ok" in taille_pt_cf:
@@ -768,7 +771,7 @@ def display_sifor(zip_file, feature, parent):
                         print("Le format des colonnes du Point n'est pas respecté.")
                     else:
                         print(" Le format des colonnes du Point est respecté.")
-                elif point_file.startswith("DTV_Points_"):
+                elif point_file.startswith("DTV"):
                     forma_pt_dtv = []
                     taille_pt_dtv = []
                     attribute_fields = [field.name() for field in layer_point.fields()]
@@ -881,7 +884,7 @@ def display_sifor(zip_file, feature, parent):
                         print(" Le format des colonnes du Point est respecté.")
                     
     print(" ")
-    print("-" * 132)
+    print("-" * 118)
     #print("-------------- V11: VERIFICATION DES CHAMPS OBLIGATOIRES DES COLONNES  DU POLYGONE --------------")
     polygon_oblig = []
     troncon_oblig = []
@@ -903,7 +906,7 @@ def display_sifor(zip_file, feature, parent):
                         if str(entite[colonne]) == "NULL" or str(entite[colonne]) is None:
                             resultat_analyse.append("Non conforme")
                             polygon_oblig.append("No")
-                            print(f"==>000 Le champ '{colonne}' contient une valeur nulle à la ligne {entite.id() +1}.")
+                            print(f"==>000 Le(s) champ(s) '{colonne}' contient une valeur nulle à la ligne {entite.id() +1}.")
                         else:
                             polygon_oblig.append("Ok")
                             #print(f"Le champ '{colonne}' est conforme car il ne contient pas de valeurs nulles.")
@@ -922,7 +925,7 @@ def display_sifor(zip_file, feature, parent):
                         elif str(entite[colonne]) == "NULL" or str(entite[colonne]) is None:
                             resultat_analyse.append("Non conforme")
                             troncon_oblig.append("No")
-                            print(f"==>000 Le champ '{colonne}' contient une valeur nulle à la ligne {entite.id() +1}.")
+                            print(f"==>000 Le(s) champ(s) '{colonne}' contient une valeur nulle à la ligne {entite.id() +1}.")
                         else:
                             troncon_oblig.append("Ok")
                 if "No" in troncon_oblig:
@@ -930,7 +933,7 @@ def display_sifor(zip_file, feature, parent):
                 else:
                     print("Tous les champs obligatoires du tronçon sont remplis par des valeurs.")
     print(" ")
-    print("-" * 132)
+    print("-" * 118)
     print("-------------- Vérifier que tous les champs obligatoires du point sont remplis par des valeurs --------------")
     point_oblig = []
     for fichier in fichiers:
@@ -948,7 +951,7 @@ def display_sifor(zip_file, feature, parent):
                         if str(valeur[colonne]) == "NULL" or valeur[colonne] is None:
                             resultat_analyse.append("Non conforme")
                             point_oblig.append("No")
-                            champs_nuls.append(f"Le champ '{colonne}' contient une valeur nulle à la ligne {valeur.id() + 1}.")
+                            champs_nuls.append(f"==>000 Le champ '{colonne}' contient une valeur nulle à la ligne {valeur.id() + 1}.")
                     if champs_nuls:
                         resultat_analyse.append("Non conforme")
                         print("\n".join(champs_nuls))
@@ -960,7 +963,7 @@ def display_sifor(zip_file, feature, parent):
                 else:
                     print("Tous les champs obligatoires du point sont remplis par des valeurs.")
     print(" ")
-    print("-" * 132)
+    print("-" * 118)
     print("-------------- Décision de l'analyse --------------")
     if "Non conforme" in resultat_analyse:
         print("Les données chargées sont invalides car elles contiennent {} points de contrôle non conforme.\n\tVeuillez consulter ces points ci-dessus, précédés par ==>000.".format(len(resultat_analyse)))
