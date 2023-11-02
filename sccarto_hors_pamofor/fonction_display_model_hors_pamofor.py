@@ -10,209 +10,336 @@ from qgis.PyQt.QtCore import QVariant
 @qgsfunction(args='auto', group='Custom')
 def display_hors_pamofor(dossier, feature, parent):
     resultat_analyse = []
-    print("-" * 148)
-    print("---------- V1: VERIFICATION DE LA STRUCTURE DES REPERTOIRES ----------")
-    # Vérifier si le chemin correspond au format spécifié
-    pattern_1 =  r".*(CF\\[a-zA-Z0-9]+(\\[a-zA-Z0-9]+)*)"
-    pattern_2 =  r".*(DTV\\[a-zA-Z0-9]+(\\[a-zA-Z0-9]+)*)"
-    
-    match_1 = re.search(pattern_1, dossier)
-    match_2 = re.search(pattern_2, dossier)
-    if match_1:
-        # Si le format est respecté, on extrait le chemin à partir de "\CF" et l'imprime
-        chemin_extracted = match_1.group(1)
-        print("Voici la structure du répertoire des fichiers: " + f"'{chemin_extracted}'" + "\nCette structure est conforme.")
-    elif match_2:
-        chemin_extracted = match_2.group(1)
-        print("Voici la structure du répertoire des fichiers: " + f"'{chemin_extracted}'" + "\nCette structure est conforme.")
+    print("-" * 114)
+    print("---------- Le shapefile doit être fourni au format compressé (.zip) ----------")
+    if ZipFile(dossier, "r"):
+        print("Le shapefile est fourni au format .zip.")
+    else :
+        print("==>000 Le shapefile n'est pas fourni au format .zip")
+   
+    print("")
+    print("-" * 114)
+    fichier = os.path.basename(dossier)
+    chemin_complet = os.path.join(dossier)
+    pattern_cf = r'^CF-\d{2}-\d{4}-\d{6}-HP\.zip$'
+    pattern_tv = r'^TV-\d{2}-\d{3}-\d{3}-\d{4}-HP\.zip$'
+    if re.match(pattern_cf, fichier):
+        print("---------- Vérifier le nom du Fichier SIG : CF-DD-AAAA-NNNNNN-HP.zip ----------")
+        print("Le nom du fichier zip respecte la spécification.")
+    elif re.match(pattern_tv, fichier):
+        print("---------- Vérifier le nom du Fichier SIG : TV-RR-DDD-SSS-VVVV-HP.zip ----------")
+        print("Le nom du fichier zip respecte la spécification.")
     else:
         resultat_analyse.append("Non conforme")
-        print("==>000 Voici la structure du répertoire des fichiers: " + f"'{dossier}'" + "\nCette structure du répertoire n'est pas conforme.")
-    
-    
-    print("")
-    print("-" * 148)
-    print("---------- V2: VERIFICATION DU CONTENU DU DOSSIER CHARGE ----------")
-    # Obtenez la liste des fichiers dans le dossier
-    print("Voici la liste des fichiers chargés: ")
-    if os.path.exists(dossier):
-        fichiers = os.listdir(dossier)
-        for fichier in fichiers:
-            print(f"'{fichier}'")
-    
+        print("---------- Vérifier le nom du Fichier SIG ----------")
+        print("==>000 Le nom du fichier zip ne respecte pas la spécification.")
     
     print("")
-    print("-" * 148)
-    print("-------------- V3 & V4 : VERIFICATION DE LA GÉOMETRIE ET LES SYSTÈMES  DE COORDONNÉES DES FICHIERS CHARGÉS --------------")
-    # Liste des extensions de fichiers de couches vecteurs supportées
-    extensions_supportees = ['.shp','.SHP']
-    # Obtenir la liste des fichiers dans le dossier
-    fichiers = [fichier for fichier in os.listdir(dossier) if os.path.isfile(os.path.join(dossier, fichier))]
-    # Charger les couches vecteurs et les ajouter à la vue QGIS
-    for fichier in fichiers:
-        if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
-            chemin_fichier = os.path.join(dossier, fichier)
+    print("-" * 114)
+    print("---------- Le zip doit contenir les 4 fichiers suivants pour le point et la polygone : .shp, .prj, .dbf, .shx ----------")
+    contenu_zip = set()
+    # Charger le fichier ZIP
+    zip_path = str(dossier)
+    # Vérifier si le chemin du fichier ZIP existe
+    if os.path.exists(zip_path):
+        # Ouvrir le fichier ZIP en mode lecture
+        with ZipFile(zip_path, 'r') as zip_ref:
+            # Obtenir la liste des fichiers dans le ZIP
+            file_list = zip_ref.namelist()
+        # Créer une chaîne de texte avec la liste des fichiers
+        #content_text = "\n".join(file_list)
+
+        # Afficher le contenu dans la console
+        #print(content_text)
+        for fichier in file_list:
+            #print(fichier)
+            if fichier.endswith(".shp") or fichier.endswith(".SHP"):
+                contenu_zip.add(fichier)
+            elif fichier.endswith(".prj") or fichier.endswith(".PRJ"):
+                contenu_zip.add(fichier)
+            elif fichier.endswith(".dbf") or fichier.endswith(".DBF"):
+                contenu_zip.add(fichier)
+            elif fichier.endswith(".shx") or fichier.endswith(".SHX"):
+                contenu_zip.add(fichier)
+        if len(contenu_zip) % 2 == 0:
+            print("Le zip contient les 4 fichiers requis : .shp, .prj, .dbf, .shx")
+        else:
+            resultat_analyse.append("Non conforme")
+            print("==>000 Le zip ne contient pas les 4 fichiers requis : .shp, .prj, .dbf, .shx")
+    else:
+        QgsMessageLog.logMessage("Le fichier ZIP spécifié n'existe pas.", "MonPlugin", QgsMessageLog.CRITICAL)
+   
+  
+  # Vérification de la géometrie des couches
+    print("")
+    print("-" * 114)
+    geom_layer = set()
+    zip_file_name = os.path.splitext(dossier)[0]
+    # Créez un dossier pour sauvegarder le contenu du ZIP s'il n'existe pas déjà
+    output_folder = os.path.join(os.path.dirname(dossier), zip_file_name)
+    # output_folder est le dossier de sauvegarde du contenu du ZIP
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    with ZipFile(dossier, 'r') as zipfile:
+        # Décompression du fichier zip
+        zipfile.extractall(output_folder)
+    extension = [".shp", ".SHP"]
+    # Vérification de la validité du chemin des fichiers
+    if not output_folder:
+        raise ValueError("Le chemin des couches est vide")
+    # Parcourir les fichiers du dossier
+    for fichier in os.listdir(output_folder):
+        chemin_fichier = os.path.join(output_folder, fichier)
+        # Vérifier si le fichier a une extension de shapefile
+        if os.path.isfile(chemin_fichier) and any(fichier.endswith(ext) for ext in extension):
+            # Extraire le nom de fichier sans extension pour le nom de la couche
             nom_couche = os.path.splitext(fichier)[0]
-            couche = QgsVectorLayer(chemin_fichier, nom_couche, 'ogr')
+            # Charger la couche vecteur depuis le shapefile
+            couche = QgsVectorLayer(chemin_fichier, nom_couche, "ogr")
+            
+            # Vérifier si la couche a été chargée avec succès
             if couche.isValid():
+                # Ajouter la couche à la vue QGIS
                 QgsProject.instance().addMapLayer(couche)
-                #print(f"La couche {fichier} a été chargée avec succès.")
             else:
-                print(f"La couche {fichier} n'est pas valide et n'a pas été chargée.")
+                print("Impossible de charger la couche vecteur depuis {}.".format(chemin_fichier))
             # Vérifier le type de géométrie de la couche
-            #geom = couche.wkbType()
-            geom_type = couche.geometryType()
-            if geom_type == QgsWkbTypes.PointGeometry:
-                print("La géométrie du fichier '{}' est de type 'Point'.".format(nom_couche))
-            elif geom_type == QgsWkbTypes.PolygonGeometry:
-                    print("La géométrie du fichier '{}' est de type 'Polygone'.".format(nom_couche))
-            #elif geom_type == QgsWkbTypes.LineGeometry: 
-                #print("La géométrie du fichier '{}' est de type 'Line'.".format(nom_couche))
+            if couche.geometryType() == QgsWkbTypes.PointGeometry or couche.geometryType() == QgsWkbTypes.PolygonGeometry:
+                geom_layer.add("PointPolyg")
             else:
-                resultat_analyse.append("Non conforme")
-                print("==>000 La géométrie du fichier '{}' est de type 'Inconnu.'".format(nom_couche))
-            # Vérifier le crs des couches
+                geom_layer.add("NoPointPolyg")
+    
+    if ("PointPolyg" in geom_layer) and ("NoPointPolyg" not in geom_layer):
+        print("---------- Le fichier .zip doit contenir : Un fichier Shape de type Polygone et Point. ----------")
+        print("Le zip contient un shape de type Polygone et Point.")
+    else :
+        resultat_analyse.append("Non conforme")
+        print("---------- Le fichier .zip doit contenir : Un fichier Shape de type Polygone et Point. ----------")
+        print("==>000 Le zip ne contient pas un shape de type Polygone et Point.")
+    
+    print("")
+    print("-" * 132)
+    print("-------------- Les systèmes de coordonnées autorisés sont EPSG:32629 et EPSG:32630 --------------")
+    crs_layer = set()
+    zip_file_name = os.path.splitext(dossier)[0]
+    # Créez un dossier pour sauvegarder le contenu du ZIP s'il n'existe pas déjà
+    output_folder = os.path.join(os.path.dirname(dossier), zip_file_name)
+    # output_folder est le dossier de sauvegarde du contenu du ZIP
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    with ZipFile(dossier, 'r') as zipfile:
+        # Décompression du fichier zip
+        zipfile.extractall(output_folder)
+    extension = [".shp", ".SHP"]
+    # Vérification de la validité du chemin des fichiers
+    if not output_folder:
+        raise ValueError("Le chemin des couches est vide")
+    # Parcourir les fichiers du dossier
+    for fichier in os.listdir(output_folder):
+        chemin_fichier = os.path.join(output_folder, fichier)
+        # Vérifier si le fichier a une extension de shapefile
+        if os.path.isfile(chemin_fichier) and any(fichier.endswith(ext) for ext in extension):
+            # Extraire le nom de fichier sans extension pour le nom de la couche
+            nom_couche = os.path.splitext(fichier)[0]
+            # Charger la couche vecteur depuis le shapefile
+            couche = QgsVectorLayer(chemin_fichier, nom_couche, "ogr")
             crs = couche.crs().authid()
-            if crs == 'EPSG:32629':
-                print("Le fichier '{}' a pour système de coordonnée: '{}'. Ce système est autorisé.".format(nom_couche, "EPSG:32629"))
-    
-            elif crs == 'EPSG:32630':
-                print("Le fichier '{}' a pour système de coordonnée: '{}'. Ce système est autorisé.".format(nom_couche, "EPSG:32630"))
-            else:
-                resultat_analyse.append("Non conforme")
-                print("==>000 Le fichier '{}' a pour système de coordonnée: '{}'. Ce système n'est pas autorisé.".format(nom_couche, crs))
-    
-    couche = None
-    
-    print(" ")
-    print("-" * 148)
-    print("-------------- V5: VERIFICATION DES PREFIXES DES FICHIERS DE TYPE POLYGONE --------------")
-    for fichier in fichiers:
-        if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
-            chemin_fichier = os.path.join(dossier, fichier)
-            nom_couche_polygon = os.path.splitext(fichier)[0]
-            couche = QgsVectorLayer(chemin_fichier, nom_couche_polygon, 'ogr')
-            # Vérifier le type de géométrie de la couche
-            polygon = couche.geometryType()
-            if polygon == QgsWkbTypes.PolygonGeometry:
-                if nom_couche_polygon.startswith("CF_Polyg_"):
-                    print("Le fichier {} est préfixé par '{}' donc le nom est conforme.".format(nom_couche_polygon, "CF_Polyg_"))
-                elif nom_couche_polygon.startswith("DTV_Polyg_"):
-                    print("Le fichier {} est préfixé par '{}' donc le nom est conforme.".format(nom_couche_polygon, "DTV_Polyg_"))
-                else:
-                    resultat_analyse.append("Non conforme")
-                    print("==>000 Le préfixe du fichier {} n'est pas conforme.".format(nom_couche_polygon))
-    couche = None
-    
-    print(" ")
-    print("-" * 148)
-    print("-------------- V6: VERIFICATION DES PREFIXES DES FICHIERS DE TYPE POINT --------------")
-    for fichier in fichiers:
-        if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
-            chemin_fichier = os.path.join(dossier, fichier)
-            nom_couche_point = os.path.splitext(fichier)[0]
-            couche = QgsVectorLayer(chemin_fichier, nom_couche_point, 'ogr')
-            # Vérifier le type de géométrie de la couche
-            point = couche.geometryType()
-            if point == QgsWkbTypes.PointGeometry:
-                if nom_couche_point.startswith("CF_Points_"):
-                    print("Le fichier {} est préfixé par '{}' donc le nom est conforme.".format(nom_couche_point, "CF_Points_"))
-                elif nom_couche_point.startswith("DTV_Points_"):
-                    print("Le fichier {} est préfixé par '{}' donc le nom est conforme.".format(nom_couche_point, "DTV_Points_"))
-                else:
-                    resultat_analyse.append("Non conforme")
-                    print("==>000 Le préfixe du fichier {} n'est pas conforme.".format(nom_couche_point))
-    couche = None
-    
-    print(" ")
-    print("-" * 148)
-    print("-------------- V7: VERIFICATION DES NOMS DES FICHIERS  --------------")
-    noms_de_bas = []
-    for fichier in fichiers:
-        if fichier.endswith('.shp') or fichier.endswith('.dbf') or fichier.endswith('.prj') or fichier.endswith('.shx') or fichier.endswith('.cpg'):
-            chemin_fichier = os.path.join(dossier, fichier)
-            nom_fichier_poly = os.path.splitext(fichier)[0]
-            couche = QgsVectorLayer(chemin_fichier, nom_fichier_poly, 'ogr')
-            # Vérifier le type de géométrie de la couche
-            if couche.geometryType() == QgsWkbTypes.PolygonGeometry:
-                if nom_fichier_poly.startswith("CF_Polyg_"):
-                    noms_de_bas.append("CF_Polyg_")
-                elif nom_fichier_poly.startswith("DTV_Polyg_"):
-                    noms_de_bas.append("DTV_Polyg_")
-                
-    if os.path.exists(dossier):
-        fichiers = os.listdir(dossier)
-        for fichier in fichiers:
-            if "CF_Polyg_" in noms_de_bas:
-                if fichier.startswith("CF_Polyg_") and fichier.endswith(".shp"):
-                    print("Le fichier '{}' préfixé par '{}' a le même nom que ses sous fichiers.".format(fichier, "CF_Polyg_"))
-            elif "DTV_Polyg_" in noms_de_bas:
-                if fichier.startswith("DTV_Polyg_") and fichier.endswith(".shp"):
-                    print("Le fichier '{}' préfixé par '{}' a le même nom que ses sous fichiers.".format(fichier, "DTV_Polyg_"))
-            else:
-                resultat_analyse.append("Non conforme")
-                print("==>000 Les noms des fichiers de type polygone ne sont pas identiques.")
-        
-    noms_de_fichier = []
-    for fichier in fichiers:
-        if fichier.endswith('.shp') or fichier.endswith('.dbf') or fichier.endswith('.prj') or fichier.endswith('.shx') or fichier.endswith('.cpg'):
-            chemin_fichier = os.path.join(dossier, fichier)
-            nom_couche_point = os.path.splitext(fichier)[0]
-            couche = QgsVectorLayer(chemin_fichier, nom_couche_point, 'ogr')
             # Vérifier le type de géométrie de la couche
             if couche.geometryType() == QgsWkbTypes.PointGeometry:
-                if nom_couche_point.startswith("CF_Points_"):
-                    noms_de_fichier.append("CF_Points_")
-                elif nom_couche_point.startswith("DTV_Points_"):
-                    noms_de_fichier.append("DTV_Points_")
-                
-    if os.path.exists(dossier):
-        fichiers = os.listdir(dossier)
-        for fichier in fichiers:
-            if "CF_Points_" in noms_de_fichier:
-                if fichier.startswith("CF_Points_") and fichier.endswith(".shp"):
-                    print("Le fichier '{}' préfixé par '{}' a le même nom que ses sous fichiers.".format(fichier, "CF_Points_"))
-            elif "DTV_Points_" in noms_de_fichier:
-                if fichier.startswith("DTV_Points_") and fichier.endswith(".shp"):
-                    print("Le fichier '{}' préfixé par '{}' a le même nom que ses sous fichiers.".format(fichier, "DTV_Points_"))
-            else:
-                resultat_analyse.append("Non conforme")
-                print("==>000 Les noms des fichiers de type polygone ne sont pas identiques.")
+                if crs == "EPSG:32629" or crs == "EPSG:32629":
+                    crs_layer.add(crs)
+            elif couche.geometryType() == QgsWkbTypes.PolygonGeometry:
+                crs_layer.add(crs)
+    if 'EPSG:32629' in crs_layer or 'EPSG:32630' in crs_layer:
+        print("Le système de coordonnées correspond à ceux autorisés  EPSG:32629 et EPSG:32630.")
+    else:
+        resultat_analyse.append("Non conforme")
+        print("==>000 Le système de coordonnées ne correspond pas à ceux autorisés  EPSG:32629 et EPSG:32630.")        
     
-    
-    print(" ")
-    print("-" * 148)
-    print("-------------- V8: VERIFICATION DU SYSTEME DE COORDONNEES DES FICHIERS DE TYPE POLYGONE ET DE TYPE POINT --------------")
-    for fichier in fichiers:
-        if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
-            chemin_fichier = os.path.join(dossier, fichier)
+    # Vérification du préfixe
+    zip_file_name = os.path.splitext(dossier)[0]
+    # Créez un dossier pour sauvegarder le contenu du ZIP s'il n'existe pas déjà
+    output_folder = os.path.join(os.path.dirname(dossier), zip_file_name)
+    # output_folder est le dossier de sauvegarde du contenu du ZIP
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    with ZipFile(dossier, 'r') as zipfile:
+        # Décompression du fichier zip
+        zipfile.extractall(output_folder)
+    extension = [".shp", ".SHP"]
+    # Vérification de la validité du chemin des fichiers
+    if not output_folder:
+        raise ValueError("Le chemin des couches est vide")
+    # Parcourir les fichiers du dossier
+    for fichier in os.listdir(output_folder):
+        chemin_fichier = os.path.join(output_folder, fichier)
+        # Vérifier si le fichier a une extension de shapefile
+        if os.path.isfile(chemin_fichier) and any(fichier.endswith(ext) for ext in extension):
+            # Extraire le nom de fichier sans extension pour le nom de la couche
             nom_couche = os.path.splitext(fichier)[0]
-            couche = QgsVectorLayer(chemin_fichier, nom_couche, 'ogr')
-            geom = couche.wkbType()
-            # Vérifier le crs des couches
+            # Charger la couche vecteur depuis le shapefile
+            couche = QgsVectorLayer(chemin_fichier, nom_couche, "ogr")
             crs = couche.crs().authid()
-            if geom == QgsWkbTypes.Point:
-                point_crs = couche.crs().authid()
-                print("Le système de coordonnées du fichier '{}' est : '{}'".format(nom_couche, point_crs))
-            elif geom == QgsWkbTypes.MultiPolygon:
-                polygon_crs = couche.crs().authid()
-                print("Le système de coordonnées du fichier '{}' est : '{}'".format(nom_couche, polygon_crs))
-                if point_crs == polygon_crs:
-                    print("Vu ce qui précède on en déduit que le système de coordonnées du fichier point est identique à celui du polygone dont crs = '{}'.".format(polygon_crs))
+            # Vérifier le type de géométrie de la couche
+            if couche.geometryType() == QgsWkbTypes.PointGeometry:
+                if nom_couche.startswith("CF_Points_"):
+                    print("")
+                    print("-" * 114)
+                    print("-------------- Vérifier que le nom des fichiers du Shape du point doit être préfixé par <CF_Points_>. --------------")
+                    print("Le nom des fichiers du Shape du point est bien préfixé")
+                elif  nom_couche.startswith("DTV_Points_"):
+                    print("")
+                    print("-" * 114)
+                    print("-------------- Vérifier que le nom des fichiers du Shape du point doit être préfixé par <DTV_Points_>. --------------")
+                    print("Le nom des fichiers du Shape du point est bien préfixé")
                 else:
+                    print("")
+                    print("-" * 114)
                     resultat_analyse.append("Non conforme")
-                    print('==>000 Vu ce qui précède on en déduit que le système de coordonnées du fichier de type point n\'est pas identique à celui du polygone.')
-    couche = None
+                    print("-------------- Vérifier le préfixe du nom des fichiers du Shape du point. --------------")
+                    print("==>000 Le nom des fichiers du Shape du point n'est pas bien préfixé.")
+            
+            elif couche.geometryType() == QgsWkbTypes.PolygonGeometry:
+                if nom_couche.startswith("CF_Polyg_"):
+                    print("")
+                    print("-" * 114)
+                    print("-------------- Vérifier que le nom des fichiers du Shape de la polygone doit être préfixé par <CF_Polyg_>. --------------")
+                    print("Le nom des fichiers du Shape de la polygone est bien préfixé.")
+                elif nom_couche.startswith("DTV_Polyg_"):
+                    print("")
+                    print("-" * 114)
+                    print("-------------- Vérifier que le nom des fichiers du Shape de la polygone doit être préfixé par <DTV_Polyg_>. --------------")
+                    print("Le nom des fichiers du Shape de la polygone est bien préfixé")
+                    
+                else:
+                    print("")
+                    print("-" * 114)
+                    resultat_analyse.append("Non conforme")
+                    print("-------------- Vérifier le préfixe du nom des fichiers. --------------")
+                    print("==>000 Le nom des fichiers n'est pas bien préfixé")
+                    
+            else:
+                print("")
+                print("-" * 114)
+                resultat_analyse.append("Non conforme")
+                print("-------------- Vérifier le préfixe du nom des fichiers. --------------")
+                print("==>000 Le nom des fichiers n'est pas bien préfixé.")
+                
+                
+    # Vérification du nom des shapes
+    prefix = set()
+    zip_file_name = os.path.splitext(dossier)[0]
+    # Créez un dossier pour sauvegarder le contenu du ZIP s'il n'existe pas déjà
+    output_folder = os.path.join(os.path.dirname(dossier), zip_file_name)
+    # output_folder est le dossier de sauvegarde du contenu du ZIP
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    with ZipFile(dossier, 'r') as zipfile:
+        # Décompression du fichier zip
+        zipfile.extractall(output_folder)
+    extension = [".shp", ".SHP"]
+    # Vérification de la validité du chemin des fichiers
+    if not output_folder:
+        raise ValueError("Le chemin des couches est vide")
+    # Parcourir les fichiers du dossier
+    for fichier in os.listdir(output_folder):
+        chemin_fichier = os.path.join(output_folder, fichier)
+        # Vérifier si le fichier a une extension de shapefile
+        if os.path.isfile(chemin_fichier) and any(fichier.endswith(ext) for ext in extension):
+            # Extraire le nom de fichier sans extension pour le nom de la couche
+            nom_couche = os.path.splitext(fichier)[0]
+            # Charger la couche vecteur depuis le shapefile
+            couche = QgsVectorLayer(chemin_fichier, nom_couche, "ogr")
+            crs = couche.crs().authid()
+            # Vérifier le type de géométrie de la couche
+            if couche.geometryType() == QgsWkbTypes.PointGeometry:
+                if nom_couche.startswith("CF_Points_"):
+                        prefix.add("CF_Points_")
+                elif  nom_couche.startswith("DTV_Points_"):
+                    prefix.add("DTV_Points_")
+            elif couche.geometryType() == QgsWkbTypes.PolygonGeometry:
+                if nom_couche.startswith("DTV_Polyg_"):
+                    prefix.add("DTV_Polyg_")
+                elif nom_couche.startswith("CF_Polyg_"):
+                    prefix.add("CF_Polyg_")
+    nom = set()                
+    if os.path.exists(output_folder):
+        fichiers = os.listdir(output_folder)
+        for fichier in fichiers:
+            if prefix:
+               if ("CF_Points_" and "CF_Polyg_") in prefix and (fichier.startswith("CF_Points_") or  fichier.startswith("CF_Polyg_")):
+                  print("")
+                  print("-" * 114)
+                  print("-------------- Vérifier que tous les fichiers ont le même nom --------------")
+                  print("Tous les fichiers ont le même nom.")
+                  break
+               elif ("DTV_Points_" and "DTV_Polyg_") in prefix and (fichier.startswith("DTV_Points_") or  fichier.startswith("DTV_Polyg_")):
+                  print("")
+                  print("-" * 114)
+                  print("-------------- Vérifier que tous les fichiers ont le même nom --------------")
+                  print("Tous les fichiers ont le même nom.")
+                  break
+                  
+            else:
+                print("")
+                print("-" * 114)
+                resultat_analyse.append("Non conforme")
+                print("-------------- Vérifier le nom des fichiers --------------")
+                print("==>000 Le nom des fichiers ne respecte pas la spécification.")
     
+    # Comparaison des crs des couches
+    print("")
+    print("-" * 114)
+    print("-------------- Le système de coordonnées du fichier de point doit être identique à celui du polygone --------------")
+    point_syst = set()
+    polyg_syst = set()
+    zip_file_name = os.path.splitext(dossier)[0]
+    # Créez un dossier pour sauvegarder le contenu du ZIP s'il n'existe pas déjà
+    output_folder = os.path.join(os.path.dirname(dossier), zip_file_name)
+    # output_folder est le dossier de sauvegarde du contenu du ZIP
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    with ZipFile(dossier, 'r') as zipfile:
+        # Décompression du fichier zip
+        zipfile.extractall(output_folder)
+    extension = [".shp", ".SHP"]
+    # Vérification de la validité du chemin des fichiers
+    if not output_folder:
+        raise ValueError("Le chemin des couches est vide")
+    # Parcourir les fichiers du dossier
+    for fichier in os.listdir(output_folder):
+        chemin_fichier = os.path.join(output_folder, fichier)
+        # Vérifier si le fichier a une extension de shapefile
+        if os.path.isfile(chemin_fichier) and any(fichier.endswith(ext) for ext in extension):
+            # Extraire le nom de fichier sans extension pour le nom de la couche
+            nom_couche = os.path.splitext(fichier)[0]
+            # Charger la couche vecteur depuis le shapefile
+            couche = QgsVectorLayer(chemin_fichier, nom_couche, "ogr")
+            #crs = couche.crs().authid()
+            # Vérifier le type de géométrie de la couche
+            if couche.geometryType() == QgsWkbTypes.PointGeometry:
+                point_crs  = couche.crs().authid()
+                point_syst.add(point_crs)
+            elif couche.geometryType() == QgsWkbTypes.PolygonGeometry:
+                polyg_crs  = couche.crs().authid()
+                polyg_syst.add(polyg_crs)
+    if  point_syst == polyg_syst:
+        print("Le système de coordonnées du fichier de point est identique à celui du polygone.")
+    else:
+        resultat_analyse.append("Non conforme")
+        print("==>000 Le système de coordonnées du fichier de point n'est pas identique à celui du polygone.")
+        
+        
     print(" ")
-    print("-" * 148)
-    print("-------------- V9: VERIFICATION DU FORMAT DES COLONNES DU POLYGONE --------------")
+    print("-" * 114)
+    print("-------------- Vérifier que le format des colonnes du polygone est respecté --------------")
+    extensions_supportees = [".shp", ".SHP"]
     colonnes_requises = [
         'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF','NOM_VILLAG', 'NOM_DEMAND', 'NOM_PROJET', 'NOM_OTA', 'SUPERF']
     colonnes_requises_hp = ['NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF','NOM_VILLAG', 'NOM_PROJET', 'NOM_OTA', 'SUPERF']
-    for fichier in fichiers:
+    for fichier in os.listdir(output_folder):
         if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
-            chemin_fichier = os.path.join(dossier, fichier)
+            chemin_fichier = os.path.join(output_folder, fichier)
             nom_couche = os.path.splitext(fichier)[0]
             layer_polygon = QgsVectorLayer(chemin_fichier, nom_couche, 'ogr')
             # Vérifier le type de géométrie de la couche
@@ -223,7 +350,7 @@ def display_hors_pamofor(dossier, feature, parent):
                     forma_cf = []
                     taille_cf = []
                     attribute_fields = [field.name() for field in layer_polygon.fields()]
-                    print("Voici les noms des colonnes du fichier de type polygone: {} ".format(attribute_fields))
+                    #print("Voici les noms des colonnes du fichier de type polygone: {} ".format(attribute_fields))
                     # Comparez les champs requis avec les champs de la couche
                     missing_fields = list(set(colonnes_requises) - set(attribute_fields))
                     extra_fields = list(set(attribute_fields) - set(colonnes_requises))
@@ -231,10 +358,10 @@ def display_hors_pamofor(dossier, feature, parent):
                         forma_cf.append("No")
                         resultat_analyse.append("Non conforme")
                         print(f"==>000 Il manque ce champ '{', '.join(missing_fields)}' dans la liste des champs de la table attributaire de la couche '{nom_couche}' donc cette table n'est pas conforme.")
-                    elif extra_fields:
-                        forma_cf.append("No")
-                        resultat_analyse.append("Non conforme")
-                        print("==>000 Le Champ '{}' est inattendu donc le format de la table attributaire de la couche '{}' n'est pas conforme.".format(extra_fields[0], nom_couche))
+                    #elif extra_fields:
+                    #    forma_cf.append("No")
+                    #    resultat_analyse.append("Non conforme")
+                    #    print("==>000 Le Champ '{}' est inattendu donc le format de la table attributaire de la couche '{}' n'est pas conforme.".format(extra_fields[0], nom_couche))
                     else:
                         forma_cf.append("Ok")
                         #print("Ce format des champs de la table attributaire de la couche '{}' est conforme.".format(nom_couche))
@@ -270,20 +397,20 @@ def display_hors_pamofor(dossier, feature, parent):
                     #print(forma_cf)
                     #print(taille_cf)
                     if "No" in forma_cf and "No" in taille_cf:
-                        print("Le format des champs de la table attributaire de la couche '{}' n'est pas conforme.".format(nom_couche))
+                        print("Le format des colonnes du polygone n'est pas respecté.")
                     elif "No" in forma_cf and "Ok" in taille_cf:
-                        print("Le format des champs de la table attributaire de la couche '{}' n'est pas conforme.".format(nom_couche))
+                        print("Le format des colonnes du polygone n'est pas respecté.")
                     elif "Ok" in forma_cf and "No" in taille_cf:
-                        print("Le format des champs de la table attributaire de la couche '{}' n'est pas conforme.".format(nom_couche))
+                        print("Le format des colonnes du polygone n'est pas respecté.")
                     else:
-                        print("Le format des champs de la table attributaire de la couche '{}' est conforme.".format(nom_couche))
+                        print("Le format des colonnes du polygone est respecté.")
                     
                 # DTV
                 elif nom_couche.startswith("DTV_Polyg_"):
                     forma_dtv = []
                     taille_dtv = []
                     attribute_fields = [field.name() for field in layer_polygon.fields()]
-                    print("Voici les noms des colonnes du fichier de type polygone: {} ".format(attribute_fields))
+                    #print("Voici les noms des colonnes du fichier de type polygone: {} ".format(attribute_fields))
                     # Comparez les champs requis avec les champs de la couche
                     missing_fields = list(set(colonnes_requises_hp) - set(attribute_fields))
                     extra_fields = list(set(attribute_fields) - set(colonnes_requises_hp))
@@ -291,10 +418,10 @@ def display_hors_pamofor(dossier, feature, parent):
                         resultat_analyse.append("Non conforme")
                         forma_dtv.append("No")
                         print(f"==>000 Il manque ce champ '{', '.join(missing_fields)}' dans la liste des champs de la table attributaire de la couche '{nom_couche}'.")
-                    elif extra_fields:
-                        forma_dtv.append("No")
-                        resultat_analyse.append("Non conforme")
-                        print("==>000 Le Champ '{}' est inattendu au niveau de la table attributaire de la couche '{}'.".format(extra_fields[0], nom_couche))
+                    #elif extra_fields:
+                    #    forma_dtv.append("No")
+                    #    resultat_analyse.append("Non conforme")
+                    #    print("==>000 Le Champ '{}' est inattendu au niveau de la table attributaire de la couche '{}'.".format(extra_fields[0], nom_couche))
                     else:
                         forma_dtv.append("Ok")
                         #print("Ce format des champs de la table attributaire de la couche '{}' est conforme.".format(nom_couche))
@@ -323,34 +450,33 @@ def display_hors_pamofor(dossier, feature, parent):
                     #print(forma_dtv)
                     #print(taille_dtv)
                     if "No" in forma_dtv and "No" in taille_dtv:
-                        print("Donc le format des champs de la table attributaire de la couche '{}' n'est pas conforme.".format(nom_couche))
+                        print("Le format des colonnes du polygone n'est pas respecté.")
                     elif "No" in forma_dtv and "Ok" in taille_dtv:
-                        print("Donc le format des champs de la table attributaire de la couche '{}' n'est pas conforme.".format(nom_couche))
+                        print("Le format des colonnes du polygone n'est pas respecté.")
                     elif "Ok" in forma_dtv and "No" in taille_dtv:
-                        print("Donc le format des champs de la table attributaire de la couche '{}' n'est pas conforme.".format(nom_couche))
+                        print("Le format des colonnes du polygone n'est pas respecté.")
                     else:
-                        print("Le format des champs de la table attributaire de la couche '{}' est conforme.".format(nom_couche))
+                        print("Le format des colonnes du polygone est respecté.") 
                 else:
-                    print("Le format des champs de la table attributaire de la couche '{}' n'est pas conforme.".format(nom_couche))     
-    layer_polygon = None            
+                    print("Le format des colonnes du polygone n'est pas respecté.")     
+               
     
     print(" ")
-    print("-" * 148)
-    print("-------------- V10: VERIFICATION DU FORMAT DES COLONNES DU POINT --------------")
-    
+    print("-" * 114)
+    print("-------------- Vérifier que le format des colonnes du point est respecté --------------")
     champs_requis = ['COORD_X', 'COORD_Y', 'NUM_SOMMET']
-    for fichier in fichiers:
+    forma = []
+    taille = []
+    for fichier in os.listdir(output_folder):
         if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
-            chemin_fichier = os.path.join(dossier, fichier)
+            chemin_fichier = os.path.join(output_folder, fichier)
             nom_couche = os.path.splitext(fichier)[0]
             layer_point = QgsVectorLayer(chemin_fichier, nom_couche, 'ogr')
             # Vérifier le type de géométrie de la couche
-            point = layer_point.wkbType()
-            if point == QgsWkbTypes.Point:
-                forma = []
-                taille = []
+            #point = layer_point.wkbType()
+            if layer_point.geometryType() == QgsWkbTypes.PointGeometry:
                 attribute_champ = [field.name() for field in layer_point.fields()]
-                print("Voici les noms des colonnes du fichier de type point: {} ".format(attribute_champ))
+                #print("Voici les noms des colonnes du fichier de type point: {} ".format(attribute_champ))
                 # Comparez les champs requis avec les champs de la couche
                 champs_manquant = list(set(champs_requis) - set(attribute_champ))
                 extra_champ = list(set(attribute_champ) - set(champs_requis))
@@ -358,11 +484,11 @@ def display_hors_pamofor(dossier, feature, parent):
                     resultat_analyse.append("Non conforme")
                     forma.append("No")
                     print(f"==>000 Il manque ce champ '{', '.join(champs_manquant)}' dans la liste des champs de la table attributaire de la couche '{nom_couche}.")
-                elif extra_champ:
-                    resultat_analyse.append("Non conforme")
-                    forma.append("No")
-                    print("==>000 Le Champ '{}' est inattendu au niveau de la table attributaire de la couche '{}'.".format(extra_champ[0], nom_couche))
-                else:
+                #elif extra_champ:
+                #    resultat_analyse.append("Non conforme")
+                #    forma.append("No")
+                #    print("==>000 Le Champ '{}' est inattendu au niveau de la table attributaire de la couche '{}'.".format(extra_champ[0], nom_couche))
+                elif not champs_manquant:
                     forma.append("Ok")
                     #print("Ce format des champs de la table attributaire de la couche '{}' est conforme.".format(nom_couche))
                 # vérification de la taille des champs
@@ -387,22 +513,25 @@ def display_hors_pamofor(dossier, feature, parent):
                                 else:
                                     taille.append("Ok")
                                 #    print("Colonne '{}': Longueur = {}.{}".format(colonne,  champ.length(), precision))
+                #print(forma)
+                #print(taille)
                 if "No" in forma and "No" in taille:
-                    print("Donc le format des champs de la table attributaire de la couche '{}' n'est pas conforme.".format(nom_couche))
+                    print(" Le format des colonnes du point n'est pas respecté.")
                 elif "No" in forma and "Ok" in taille:
-                    print("Donc le format des champs de la table attributaire de la couche '{}' n'est pas conforme.".format(nom_couche))
+                    print(" Le format des colonnes du point n'est pas respecté.")
                 elif "Ok" in forma and "No" in taille:
-                    print("Donc le format des champs de la table attributaire de la couche '{}' n'est pas conforme.".format(nom_couche))
+                    print(" Le format des colonnes du point n'est pas respecté.")
                 else:
-                    print("Le format des champs de la table attributaire de la couche '{}' est conforme.".format(nom_couche))
-    layer_point = None
+                    print("Le format des colonnes du point est respecté.")
+               
     
     print(" ")
-    print("-" * 148)
-    print("-------------- V11: VERIFICATION DES VALEURS DES CHAMPS  DU POLYGONE --------------")
-    for fichier in fichiers:
+    print("-" * 114)
+    print("-------------- Vérifier que tous les champs obligatoires du polygone sont remplis par des valeurs --------------")
+    value_null = set()
+    for fichier in os.listdir(output_folder):
         if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
-            chemin_fichier = os.path.join(dossier, fichier)
+            chemin_fichier = os.path.join(output_folder, fichier)
             nom_couche = os.path.splitext(fichier)[0]
             polygon_couche = QgsVectorLayer(chemin_fichier, nom_couche, 'ogr')
             # Vérifier le type de géométrie de la couche
@@ -414,31 +543,28 @@ def display_hors_pamofor(dossier, feature, parent):
                     for entite in polygon_couche.getFeatures():
                         if str(entite[colonne]) == "NULL" or str(entite[colonne]) is None:
                             resultat_analyse.append("Non conforme")
+                            value_null.add("No")
                             print(f"==>000 Le champ '{colonne}' contient une valeur nulle à la ligne {entite.id() +1}.")
                         else:
-                            print(f"Le champ '{colonne}' est conforme car il ne contient pas de valeurs nulles.")
+                            value_null.add("Ok")
+                            #print(f"Le champ '{colonne}' est conforme car il ne contient pas de valeurs nulles.")
+    if "No" in  value_null and "Ok" in value_null:
+        print("Tous les champs obligatoires du polygone ne sont pas remplis par des valeurs.")
+    elif "No" in  value_null:
+        print("Tous les champs obligatoires du polygone ne sont pas remplis par des valeurs.")
+    else:
+        print("Tous les champs obligatoires du polygone sont remplis par des valeurs.")
                     
-                    #for feature in polygon_couche.getFeatures():
-                    #    valeur = feature[colonne]
-                    #    if isinstance(valeur, str):
-                    #        if len(valeur) >= 50:
-                    #            resultat_analyse.append("Non conforme")
-                    #            print("La taille de la valeur '{}' appartenant à la colonne '{}' ne respecte pas le nombre de caractères attendu. Voir la ligne {}".format(valeur, colonne, feature.id() + 1))
-                    #    elif isinstance(valeur, float):
-                    #        valeur_arrondie = round(valeur, 10)
-                    #        if len(str(valeur_arrondie)) >=20:
-                    #            resultat_analyse.append("Non conforme")
-                    #            print("La taille de la valeur '{}' appartenant à la colonne '{}' ne respecte pas le nombre de caractères attendu. Voir la ligne {}".format(valeur_arrondie, colonne, feature.id() + 1))
                     
     
     print(" ")
-    print("-" * 148)
-    print("-------------- V12: VERIFICATION DES VALEURS DES CHAMPS  DU POINT --------------")
+    print("-" * 114)
+    print("-------------- Vérifier que tous les champs obligatoires du point sont remplis par des valeurs --------------")
     # Créez un dictionnaire pour stocker les champs et les lignes avec des valeurs nulles
-    
-    for fichier in fichiers:
+    champs_nuls = set()
+    for fichier in os.listdir(output_folder):
         if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
-            chemin_fichier = os.path.join(dossier, fichier)
+            chemin_fichier = os.path.join(output_folder, fichier)
             nom_couche_point = os.path.splitext(fichier)[0]
             point_couche = QgsVectorLayer(chemin_fichier, nom_couche_point, 'ogr')
             # Vérifier le type de géométrie de la couche
@@ -446,35 +572,29 @@ def display_hors_pamofor(dossier, feature, parent):
                 # Boucler à travers les entités de la couche
                 for colonne  in point_couche.fields().names():
                     # verifier les valeurs des champs
-                    champs_nuls = []
                     for valeur in point_couche.getFeatures():
                         if str(valeur[colonne]) == "NULL" or valeur[colonne] is None:
                             resultat_analyse.append("Non conforme")
-                            champs_nuls.append(f"==>000 Le champ '{colonne}' contient une valeur nulle à la ligne {valeur.id() + 1}.")
-                    if champs_nuls:
-                        print("\n".join(champs_nuls))
-                    else:
-                        print(f"Le champ '{colonne}' est conforme car il ne contient pas de valeurs nulles.")
+                            champs_nuls.add("No")
+                            print(f"==>000 Le champ '{colonne}' contient une valeur nulle à la ligne {valeur.id() + 1}.")
+                        else:
+                            champs_nuls.add("Ok")
+                            #print(f"Le champ '{colonne}' est conforme car il ne contient pas de valeurs nulles.")
                     
-                    #for feature in point_couche.getFeatures():
-                    #    valeur = feature[colonne]
-                    #    if isinstance(valeur, str):
-                    #        if len(valeur)  >= 50:
-                    #            resultat_analyse.append("Non conforme")
-                    #            print("La taille de la valeur '{}' appartenant à la colonne '{}' ne respecte pas le nombre de caractères attendu. Voir la ligne {}.".format(valeur, colonne, feature.id() + 1))
-                    #    elif isinstance(valeur, float):
-                    #        valeur_arrondie = round(valeur, 10)
-                    #        if len(str(valeur_arrondie))  >= 20:
-                    #            resultat_analyse.append("Non conforme")
-                    #            print("La taille de la valeur '{}' appartenant à la colonne '{}' ne respecte pas le nombre de caractères attendu. Voir la ligne {}".format(valeur_arrondie, colonne, feature.id() + 1))
+    if "No" in  champs_nuls and "Ok" in champs_nuls:
+        print("Tous les champs obligatoires du point ne sont pas remplis par des valeurs.")
+    elif "No" in  champs_nuls:
+        print("Tous les champs obligatoires du point ne sont pas remplis par des valeurs.")
+    else:
+        print("Tous les champs obligatoires du point sont remplis par des valeurs.")                
                                 
     
     print(" ")
-    print("-" * 148)
-    print("-------------- DECISION FINALE DE L'ANALYSE --------------")
+    print("-" * 114)
+    print("-------------- Décision finale de l'analyse --------------")
     #print(resultat_analyse)
     if "Non conforme" in resultat_analyse:
-        print("Les données chargées sont invalides car elles contiennent {} points de contrôle non conforme.\n\t --->Veuillez consulter ces points de contrôle ci dessus précédés par ==>000".format(len(resultat_analyse)))
+        print("Les données chargées sont invalides car elles contiennent {} points de contrôle non conforme.\n\t---> Veuillez consulter ces points de contrôle ci dessus précédés par ==>000".format(len(resultat_analyse)))
     else:
         print("\t----> 'Les données chargées sont valides.' <----")
     
