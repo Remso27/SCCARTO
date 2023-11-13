@@ -9,6 +9,7 @@ from qgis.PyQt.QtCore import QVariant
 @qgsfunction(args='auto', group='Custom')
 # le paramètre layers est le chemin du dossier
 def display_pamofor(zip_file, feature, parent):
+    #PAMOFOR = os.path.splitext(os.path.basename(zip_file))[0]
     resultat_analyse = []
     print("-" * 118)
     print("---------- Le shapefile doit être fourni au format compressé (.zip). ----------")
@@ -161,17 +162,17 @@ def display_pamofor(zip_file, feature, parent):
                 geom_layer.add("Point")
             elif couche.geometryType() == QgsWkbTypes.PolygonGeometry:
                 geom_layer.add("Polyg")
-            elif couche.geometryType() == QgsWkbTypes.LineGeometry:
-                geom_layer.add("Line")
+            #elif couche.geometryType() == QgsWkbTypes.LineGeometry:
+            #    geom_layer.add("Line")
     #print(geom_layer)
     if "Point" in geom_layer and "Polyg" in geom_layer:
         print("---------- Le fichier .zip doit contenir : Un fichier Shape de type Polygone et Point. ----------")
         print("Le zip contient un shape de type Polygone et Point.")
-    elif "Point" in geom_layer and "Line" in geom_layer:
-        print("---------- Le fichier .zip doit contenir : Un fichier Shape de type Ligne et Point. ----------")
-        print("Le zip contient un shape de type Ligne et Point.")
+    #elif "Point" in geom_layer and "Line" in geom_layer:
+    #    print("---------- Le fichier .zip doit contenir : Un fichier Shape de type Ligne et Point. ----------")
+    #    print("Le zip contient un shape de type Ligne et Point.")
     else :
-        print("---------- Vérifier les géometries des données chargées ----------")
+        print("---------- Le fichier .zip doit contenir : Un fichier Shape de type Polygone et Point. ----------")
         resultat_analyse.append("Non conforme")
         print("==>000 Les géometries des données chargées ne sont pas repectées.")
         
@@ -212,9 +213,9 @@ def display_pamofor(zip_file, feature, parent):
                 if crs == 'EPSG:32629' or crs == 'EPSG:32630':
                     crs_layer.add(crs)
                 #print("La géométrie du  fichier '{}' est de type 'Polygone.'".format(nom_couche))
-            elif couche.geometryType() == QgsWkbTypes.LineGeometry:
-                if crs == 'EPSG:32629' or crs == 'EPSG:32630':
-                    crs_layer.add(crs)
+            #elif couche.geometryType() == QgsWkbTypes.LineGeometry:
+            #    if crs == 'EPSG:32629' or crs == 'EPSG:32630':
+            #        crs_layer.add(crs)
                 
     if 'EPSG:32629' in crs_layer or 'EPSG:32630' in crs_layer:
         print("Le système de coordonnées correspond à ceux autorisés  EPSG:32629 et EPSG:32630.")
@@ -249,15 +250,15 @@ def display_pamofor(zip_file, feature, parent):
                     resultat_analyse.append("Non conforme")
                     print("-------------- Vérifier les préfixes du Shape du polygone --------------")
                     print("==>000 Le nom des fichiers du Shape du polygone n'est pas bien préfixé")
-            elif geom == QgsWkbTypes.LineGeometry:
-                print(" ")
-                print("-" * 118)
-                print("-------------- Vérifier que le nom des fichiers du Shape des tronçons doit être préfixé par <DTV_Lignes_> --------------")
-                if nom_couche.startswith("DTV_Lignes_"):
-                    print("Le nom des fichiers du Shape du tronçon est bien préfixé.")
-                else:
-                    resultat_analyse.append("Non conforme")
-                    print("==>000 Le nom des fichiers du Shape du tronçon n'est pas bien préfixé.")
+            #elif geom == QgsWkbTypes.LineGeometry:
+            #    print(" ")
+            #    print("-" * 118)
+            #    print("-------------- Vérifier que le nom des fichiers du Shape des tronçons doit être préfixé par <DTV_Lignes_> --------------")
+            #    if nom_couche.startswith("DTV_Lignes_"):
+            #        print("Le nom des fichiers du Shape du tronçon est bien préfixé.")
+            #    else:
+            #        resultat_analyse.append("Non conforme")
+            #        print("==>000 Le nom des fichiers du Shape du tronçon n'est pas bien préfixé.")
             
     
     
@@ -361,17 +362,17 @@ def display_pamofor(zip_file, feature, parent):
                 elif couche.geometryType() == QgsWkbTypes.PolygonGeometry:
                     poly_crs = couche.crs().authid()
                     poly_sys.add(poly_crs)
-                elif couche.geometryType() == QgsWkbTypes.LineGeometry:
-                    ligne_crs = couche.crs().authid()
-                    ligne_sys.add(ligne_crs)
+                #elif couche.geometryType() == QgsWkbTypes.LineGeometry:
+                #    ligne_crs = couche.crs().authid()
+                #    ligne_sys.add(ligne_crs)
     # Comparaison des crs
     if poly_sys == point_sys:
         print("-------------- Le système de coordonnées du fichier de point doit être identique à celui du polygone --------------")
         print('Le système de coordonnées du fichier de point est identique à celui du polygone.')
     
-    elif point_sys == ligne_sys:
-        print("-------------- Le système de coordonnées du fichier de point doit être identique à celui du tronçon --------------")
-        print('Le système de coordonnées du fichier de point est identique à celui du tronçon.')
+    #elif point_sys == ligne_sys:
+    #    print("-------------- Le système de coordonnées du fichier de point doit être identique à celui du tronçon --------------")
+    #    print('Le système de coordonnées du fichier de point est identique à celui du tronçon.')
     else:
         print("-------------- Le système de coordonnées du fichier de point doit être identique à celui du polygone --------------")
         resultat_analyse.append("Non conforme")
@@ -386,11 +387,11 @@ def display_pamofor(zip_file, feature, parent):
         'NUM_DOSS', 'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF',
         'NOM_VILLAG', 'NOM_DEMAND', 'SUPERF', 'PERIM', 'NOM_PROJET', 'NOM_OTA']
     colonnes_requises_dtv = [
-        'NBTRONCONS', 'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF',
-        'NOM_VILLAG','ID_VILLAGE', 'SUPERF', 'PERIM']
-    colonne_troncon = [
-        'TYPELIMITE', 'POSITION','VILLAGEVOI','TYPE_NATUR','LONG_LEVE', 'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF',
-        'NOM_VILLAG']
+        'NOM_PROJET','NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF',
+        'NOM_VILLAG','ID_VILLAGE', 'SUPERF', 'PERIM', 'NOM_OTA']
+    #colonne_troncon = [
+    #    'TYPELIMITE', 'POSITION','VILLAGEVOI','TYPE_NATUR','LONG_LEVE', 'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF',
+    #    'NOM_VILLAG']
     for fichier in fichiers:
         if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
             chemin_fichier = os.path.join(output_folder, fichier)
@@ -463,8 +464,26 @@ def display_pamofor(zip_file, feature, parent):
                                         taille_cf.append("No")
                                         resultat_analyse.append("Non conforme")
                                         print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                                else:
-                                    taille_cf.append("Ok")
+                                    else:
+                                        taille_cf.append("Ok")
+                                
+                                elif colonne == "NOM_PROJET":
+                                    if champ.length() != 50:
+                                        taille_cf.append("No")
+                                        resultat_analyse.append("Non conforme")
+                                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                    else:
+                                        taille_cf.append("Ok")
+                                
+                                elif colonne == "NOM_OTA":
+                                    if champ.length() != 50:
+                                        taille_cf.append("No")
+                                        resultat_analyse.append("Non conforme")
+                                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                    else:
+                                        taille_cf.append("Ok")
+                                
+                                
                                     #print("Colonne '{}': Longueur = {}".format(colonne,  champ.length()))
                             elif champ.type() == QVariant.Double:
                                 taille_cf.append("Ok")
@@ -506,50 +525,68 @@ def display_pamofor(zip_file, feature, parent):
                             champ = layer_polygon.fields().field(colonne)
                             # Vérifier si le champ est de type String
                             if champ.type() == QVariant.String:
-                                #if colonne == "NO_TRANS":
-                                #    if champ.length() != 15:
-                                #        taille_dtv.append("No")
-                                #        resultat_analyse.append("Non conforme")
-                                #        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (15).".format(colonne, champ.length()))
-                                if colonne == "NOM_REGION":
+                                if colonne == "ID_VILLAGE":
                                     if champ.length() != 50:
                                         taille_dtv.append("No")
                                         resultat_analyse.append("Non conforme")
                                         print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                    else:
+                                        taille_dtv.append("Ok")
+                                elif colonne == "NOM_VILLAGE":
+                                    if champ.length() != 50:
+                                        taille_dtv.append("No")
+                                        resultat_analyse.append("Non conforme")
+                                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                    else:
+                                        taille_dtv.append("Ok")
+                                elif colonne == "NOM_REGION":
+                                    if champ.length() != 50:
+                                        taille_dtv.append("No")
+                                        resultat_analyse.append("Non conforme")
+                                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                    else:
+                                        taille_dtv.append("Ok")
                                 elif colonne == "NOM_DEPART":
                                     if champ.length() != 50:
                                         taille_dtv.append("No")
                                         resultat_analyse.append("Non conforme")
                                         print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                    else:
+                                        taille_dtv.append("Ok")
+                                
                                 elif colonne == "NOM_SSPREF":
                                     if champ.length() != 50:
                                         taille_dtv.append("No")
                                         resultat_analyse.append("Non conforme")
                                         print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                                elif colonne == "NOM_VILLAG":
+                                    else:
+                                        taille_dtv.append("Ok")
+                            
+                                elif colonne == "NOM_PROJET":
                                     if champ.length() != 50:
                                         taille_dtv.append("No")
                                         resultat_analyse.append("Non conforme")
                                         print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                                else:
-                                    taille_dtv.append("Ok")
-                                    #print("Colonne '{}': Longueur = {}".format(colonne,  champ.length()))
-                            elif champ.type() == QVariant.Double:
-                                if colonne == "SUPERF":
-                                    precision = champ.precision()
-                                    if champ.length() != 20 and precision != 2:
-                                        taille_dtv.append("No")
-                                        resultat_analyse.append("Non conforme")
-                                        print("==>000 La taille de colonne '{}' est = {} avec une précision de {}, elle ne respecte pas la taille (20) et la précision (2) attendues.".format(colonne, champ.length(), precision))
                                     else:
                                         taille_dtv.append("Ok")
-                                    #print("Colonne '{}': Longueur = {}.{}".format(colonne,  champ.length(), precision))
-                            elif champ.type() == QVariant.Integer:
-                                if colonne == "NBTRONCONS":
-                                    if champ.length() != 10:
+                                elif colonne == "NOM_OTA":
+                                    if champ.length() != 50:
                                         taille_dtv.append("No")
                                         resultat_analyse.append("Non conforme")
-                                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (10).".format(colonne, champ.length()))
+                                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                    else:
+                                        taille_dtv.append("Ok")
+                                
+                                    #print("Colonne '{}': Longueur = {}".format(colonne,  champ.length()))
+                            elif champ.type() == QVariant.Double:
+                                    taille_dtv.append("Ok")
+                                    #print("Colonne '{}': Longueur = {}.{}".format(colonne,  champ.length(), precision))
+                            #elif champ.type() == QVariant.Integer:
+                            #    if colonne == "NBTRONCONS":
+                            #        if champ.length() != 10:
+                            #            taille_dtv.append("No")
+                            #            resultat_analyse.append("Non conforme")
+                            #            print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (10).".format(colonne, champ.length()))
                                     
                     #print(forma_dtv)
                     #print(taille_dtv)
@@ -561,110 +598,110 @@ def display_pamofor(zip_file, feature, parent):
                         print("Le format des colonnes du Polygone n'est pas respecté.")
                     else:
                         print(" Le format des colonnes du polygone est respecté.")
-            elif layer_polygon.geometryType() == QgsWkbTypes.LineGeometry:
-                print("--------------  Vérifier que le format des colonnes du tronçon est respecté --------------")
-                forma_tr = []
-                taille_tr = []
-                attribute_fields = [field.name() for field in layer_polygon.fields()]
-                #print("Voici les noms des colonnes du fichier de type polygone: {} ".format(attribute_fields))
-                # Comparez les champs requis avec les champs de la couche
-                missing_fields = list(set(colonne_troncon) - set(attribute_fields))
-                #extra_fields = list(set(attribute_fields) - set(colonnes_cf))
-                if missing_fields:
-                    forma_tr.append("No")
-                    resultat_analyse.append("Non conforme")
-                    print(f"==>000 Il manque le(s) champ(s) '{', '.join(missing_fields)}' dans la liste des champs de la table attributaire de la couche '{nom_couche}'.")
-                #elif extra_fields:
-                #    forma_cf.append("No")
-                #    resultat_analyse.append("Non conforme")
-                #    print("==>000 Le Champ '{}' est inattendu donc le format de la table attributaire de la couche '{}' n'est pas conforme.".format(extra_fields[0], nom_couche))
-                else:
-                    forma_tr.append("Ok")
-                # vérification de la taille des champs
-                for colonne  in layer_polygon.fields().names():
-                        champ = layer_polygon.fields().field(colonne)
-                        # Vérifier si le champ est de type String
-                        if champ.type() == QVariant.String:
-                            #if colonne == "NO_TRANS":
-                            #    if champ.length() != 15:
-                            #        taille_tr.append("No")
-                            #        resultat_analyse.append("Non conforme")
-                            #        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (15).".format(colonne, champ.length()))
-                            if colonne == "TYPELIMITE":
-                                if champ.length() != 20:
-                                    taille_tr.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (20).".format(colonne, champ.length()))
-                            elif colonne == "POSITION":
-                                if champ.length() != 20:
-                                    taille_tr.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (20).".format(colonne, champ.length()))
-                            
-                            elif colonne == "VILLAGEVOI":
-                                if champ.length() != 100:
-                                    taille_tr.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (100).".format(colonne, champ.length()))
-                            
-                            elif colonne == "TYPE_NATUR":
-                                if champ.length() != 30:
-                                    taille_tr.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (30).".format(colonne, champ.length()))
-                            
-                            elif colonne == "NOM_REGION":
-                                if champ.length() != 50:
-                                    taille_tr.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                            
-                            elif colonne == "NOM_DEPART":
-                                if champ.length() != 50:
-                                    taille_tr.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                            elif colonne == "NOM_SSPREF":
-                                if champ.length() != 50:
-                                    taille_tr.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                            elif colonne == "NOM_VILLAG":
-                                if champ.length() != 50:
-                                    taille_tr.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                            else:
-                                taille_tr.append("Ok")
-                                #print("Colonne '{}': Longueur = {}".format(colonne,  champ.length()))
-                        elif champ.type() == QVariant.Double:
-                            if colonne == "LONG_LEVE":
-                                precision = champ.precision()
-                                if champ.length() != 20 and precision != 10:
-                                    taille_tr.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {} avec une précision de {}, elle ne respecte pas la taille (20) et la précision (10) attendues.".format(colonne, champ.length(), precision))
-                                else:
-                                    taille_tr.append("Ok")
-                                #print("Colonne '{}': Longueur = {}.{}".format(colonne,  champ.length(), precision))
-                if "No" in forma_tr and "No" in taille_tr:
-                        print("Le format des colonnes du Tronçon n'est pas respecté.")
-                elif "No" in forma_tr and "Ok" in taille_tr:
-                    print("Le format des colonnes du Tronçon n'est pas respecté.")
-                elif "Ok" in forma_tr and "No" in taille_tr:
-                    print("Le format des colonnes du Tronçon n'est pas respecté.")
-                else:
-                    print(" Le format des colonnes du Tronçon est respecté.")        
+            #elif layer_polygon.geometryType() == QgsWkbTypes.LineGeometry:
+            #    print("--------------  Vérifier que le format des colonnes du tronçon est respecté --------------")
+            #    forma_tr = []
+            #    taille_tr = []
+            #    attribute_fields = [field.name() for field in layer_polygon.fields()]
+            #    #print("Voici les noms des colonnes du fichier de type polygone: {} ".format(attribute_fields))
+            #    # Comparez les champs requis avec les champs de la couche
+            #    missing_fields = list(set(colonne_troncon) - set(attribute_fields))
+            #    #extra_fields = list(set(attribute_fields) - set(colonnes_cf))
+            #    if missing_fields:
+            #        forma_tr.append("No")
+            #        resultat_analyse.append("Non conforme")
+            #        print(f"==>000 Il manque le(s) champ(s) '{', '.join(missing_fields)}' dans la liste des champs de la table attributaire de la couche '{nom_couche}'.")
+            #    #elif extra_fields:
+            #    #    forma_cf.append("No")
+            #    #    resultat_analyse.append("Non conforme")
+            #    #    print("==>000 Le Champ '{}' est inattendu donc le format de la table attributaire de la couche '{}' n'est pas conforme.".format(extra_fields[0], nom_couche))
+            #    else:
+            #        forma_tr.append("Ok")
+            #    # vérification de la taille des champs
+            #    for colonne  in layer_polygon.fields().names():
+            #            champ = layer_polygon.fields().field(colonne)
+            #            # Vérifier si le champ est de type String
+            #            if champ.type() == QVariant.String:
+            #                #if colonne == "NO_TRANS":
+            #                #    if champ.length() != 15:
+            #                #        taille_tr.append("No")
+            #                #        resultat_analyse.append("Non conforme")
+            #                #        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (15).".format(colonne, champ.length()))
+            #                if colonne == "TYPELIMITE":
+            #                    if champ.length() != 20:
+            #                        taille_tr.append("No")
+            #                        resultat_analyse.append("Non conforme")
+            #                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (20).".format(colonne, champ.length()))
+            #                elif colonne == "POSITION":
+            #                    if champ.length() != 20:
+            #                        taille_tr.append("No")
+            #                        resultat_analyse.append("Non conforme")
+            #                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (20).".format(colonne, champ.length()))
+            #                
+            #                elif colonne == "VILLAGEVOI":
+            #                    if champ.length() != 100:
+            #                        taille_tr.append("No")
+            #                        resultat_analyse.append("Non conforme")
+            #                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (100).".format(colonne, champ.length()))
+            #                
+            #                elif colonne == "TYPE_NATUR":
+            #                    if champ.length() != 30:
+            #                        taille_tr.append("No")
+            #                        resultat_analyse.append("Non conforme")
+            #                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (30).".format(colonne, champ.length()))
+            #                
+            #                elif colonne == "NOM_REGION":
+            #                    if champ.length() != 50:
+            #                        taille_tr.append("No")
+            #                        resultat_analyse.append("Non conforme")
+            #                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+            #                
+            #                elif colonne == "NOM_DEPART":
+            #                    if champ.length() != 50:
+            #                        taille_tr.append("No")
+            #                        resultat_analyse.append("Non conforme")
+            #                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+            #                elif colonne == "NOM_SSPREF":
+            #                    if champ.length() != 50:
+            #                        taille_tr.append("No")
+            #                        resultat_analyse.append("Non conforme")
+            #                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+            #                elif colonne == "NOM_VILLAG":
+            #                    if champ.length() != 50:
+            #                        taille_tr.append("No")
+            #                        resultat_analyse.append("Non conforme")
+            #                        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+            #                else:
+            #                    taille_tr.append("Ok")
+            #                    #print("Colonne '{}': Longueur = {}".format(colonne,  champ.length()))
+            #            elif champ.type() == QVariant.Double:
+            #                if colonne == "LONG_LEVE":
+            #                    precision = champ.precision()
+            #                    if champ.length() != 20 and precision != 10:
+            #                        taille_tr.append("No")
+            #                        resultat_analyse.append("Non conforme")
+            #                        print("==>000 La taille de colonne '{}' est = {} avec une précision de {}, elle ne respecte pas la taille (20) et la précision (10) attendues.".format(colonne, champ.length(), precision))
+            #                    else:
+            #                        taille_tr.append("Ok")
+            #                    #print("Colonne '{}': Longueur = {}.{}".format(colonne,  champ.length(), precision))
+            #    if "No" in forma_tr and "No" in taille_tr:
+            #            print("Le format des colonnes du Tronçon n'est pas respecté.")
+            #    elif "No" in forma_tr and "Ok" in taille_tr:
+            #        print("Le format des colonnes du Tronçon n'est pas respecté.")
+            #    elif "Ok" in forma_tr and "No" in taille_tr:
+            #        print("Le format des colonnes du Tronçon n'est pas respecté.")
+            #    else:
+            #        print(" Le format des colonnes du Tronçon est respecté.")        
                 
     print(" ")
     print("-" * 118)
     print("-------------- Vérifier que le format des colonnes du point est respecté --------------")
-    champs_requis_cf = ['NUM_DOSS', 'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF',  'NOM_DEPART', 
+    champs_requis_cf = ['NUM_DOSS', 'NOM_REGION', 'NOM_DEPART', 
         'NOM_SSPREF', 'NOM_VILLAG', 'NUM_SOMMET', 'COORD_X', 'COORD_Y', 
          'TYP_SOMMET','TYP_LEVE', 'SOMM_SUIV', 'NOM_PROJET','DIST_SUIV', 'NUM_LIMIT', 'NOM_VOIS', "NOM_OTA"]
-    champs_requis_dtv = [ 'TYP_LEVE', 'AMORCE', 'NOM_REGION', 'NOM_DEPART', 
+    champs_requis_dtv = [ 'ID_VILLAGE','TYP_LEVE','NOM_REGION', 'NOM_DEPART',
         'NOM_SSPREF', 'NOM_VILLAG', 'NUM_SOMMET', 'COORD_X', 'COORD_Y', 
-         'TYP_SOMMET', 'SOMM_SUIV', 'DIST_SUIV', 'NOM_VOIS', "NUM_TRONC"]
+         'TYP_SOMMET', 'SOMM_SUIV', 'DIST_SUIV', 'NOM_VOIS', "NUM_TRONC", 'NOM_PROJET', "NOM_OTA"]
     forma_pt_cf = []
     taille_pt_cf = []
     for point_file in os.listdir(output_folder):
@@ -696,72 +733,89 @@ def display_pamofor(zip_file, feature, parent):
                         champ = layer_polygon.fields().field(colonne)
                         # Vérifier si le champ est de type String
                         if champ.type() == QVariant.String:
-                            if colonne == "TYP_LEVE":
+                            if colonne == "NUM_DOSS":
                                 if champ.length() != 50:
                                     taille_pt_cf.append("No")
                                     resultat_analyse.append("Non conforme")
                                     print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                            
-                            elif colonne == "TYP_SOMMET":
-                                if champ.length() != 50:
-                                    taille_pt_cf.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                            
-                            elif colonne == "NUM_LIMIT":
-                                if champ.length() != 50:
-                                    taille_pt_cf.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                            
+                                else:
+                                    taille_pt_cf.append("Ok")
                             elif colonne == "NOM_REGION":
                                 if champ.length() != 50:
                                     taille_pt_cf.append("No")
                                     resultat_analyse.append("Non conforme")
                                     print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                            
+                                else:
+                                    taille_pt_cf.append("Ok")
                             elif colonne == "NOM_DEPART":
                                 if champ.length() != 50:
                                     taille_pt_cf.append("No")
                                     resultat_analyse.append("Non conforme")
                                     print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                else:
+                                    taille_pt_cf.append("Ok")
                             elif colonne == "NOM_SSPREF":
                                 if champ.length() != 50:
                                     taille_pt_cf.append("No")
                                     resultat_analyse.append("Non conforme")
                                     print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                else:
+                                    taille_pt_cf.append("Ok")
                             elif colonne == "NOM_VILLAG":
                                 if champ.length() != 50:
                                     taille_pt_cf.append("No")
                                     resultat_analyse.append("Non conforme")
                                     print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                else:
+                                    taille_pt_cf.append("Ok")
+                            
+                            elif colonne == "TYP_LEVE":
+                                if champ.length() != 50:
+                                    taille_pt_cf.append("No")
+                                    resultat_analyse.append("Non conforme")
+                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                else:
+                                    taille_pt_cf.append("Ok")
+                            elif colonne == "TYP_SOMMET":
+                                if champ.length() != 50:
+                                    taille_pt_cf.append("No")
+                                    resultat_analyse.append("Non conforme")
+                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                else:
+                                    taille_pt_cf.append("Ok")
                             elif colonne == "NUM_LIMIT":
                                 if champ.length() != 50:
                                     taille_pt_cf.append("No")
                                     resultat_analyse.append("Non conforme")
                                     print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                else:
+                                    taille_pt_cf.append("Ok")
                             elif colonne == "NOM_VOIS":
                                 if champ.length() != 50:
                                     taille_pt_cf.append("No")
                                     resultat_analyse.append("Non conforme")
                                     print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                            elif colonne == "NOM_OTA":
-                                if champ.length() != 50:
-                                    taille_pt_cf.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                else:
+                                    taille_pt_cf.append("Ok")
                             elif colonne == "NOM_PROJET":
                                 if champ.length() != 50:
                                     taille_pt_cf.append("No")
                                     resultat_analyse.append("Non conforme")
                                     print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                            else:
-                                taille_pt_cf.append("Ok")
-                                #print("Colonne '{}': Longueur = {}".format(colonne,  champ.length()))
-                        
-                                #print("Colonne '{}': Longueur = {}.{}".format(colonne,  champ.length(), precision))
+                                else:
+                                    taille_pt_cf.append("Ok")
+                            elif colonne == "NOM_OTA":
+                                if champ.length() != 50:
+                                    taille_pt_cf.append("No")
+                                    resultat_analyse.append("Non conforme")
+                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                else:
+                                    taille_pt_cf.append("Ok")
+                            
+                            
                         elif champ.type() == QVariant.Double:
                             taille_pt_cf.append("Ok")
+                        
                         
                     if "No" in forma_pt_cf and "No" in taille_pt_cf:
                             print("Le format des colonnes du Point n'est pas respecté.")
@@ -782,7 +836,7 @@ def display_pamofor(zip_file, feature, parent):
                     if missing_fields:
                         resultat_analyse.append("Non conforme")
                         forma_pt_dtv.append("No")
-                        print(f"==>000 Il manque le champ '{', '.join(missing_fields)}' dans la liste des champs de la table attributaire de la couche '{point_file}'.")
+                        print(f"==>000 Il manque le(s) champ(s) '{', '.join(missing_fields)}' dans la liste des champs de la table attributaire de la couche '{point_file}'.")
                     #elif extra_fields:
                     #    print(" Ce Champ '{}' est inattendu donc le format de la table attributaire de la couche '{}' donc la table n'est pas conforme.".format(extra_fields[0], point_file))
                     else:
@@ -792,26 +846,7 @@ def display_pamofor(zip_file, feature, parent):
                         champ = layer_polygon.fields().field(colonne)
                         # Vérifier si le champ est de type String
                         if champ.type() == QVariant.String:
-                            #if colonne == "NO_TRANS":
-                            #    if champ.length() != 15:
-                            #        taille_pt_dtv.append("No")
-                            #        resultat_analyse.append("Non conforme")
-                            #        print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (15).".format(colonne, champ.length()))
-                            if colonne == "TYP_LEVE":
-                                if champ.length() != 50:
-                                    taille_pt_dtv.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                                else:
-                                    taille_pt_dtv.append("Ok")
-                            elif colonne == "TYP_SOMMET":
-                                if champ.length() != 50:
-                                    taille_pt_dtv.append("No")
-                                    resultat_analyse.append("Non conforme")
-                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
-                                else:
-                                    taille_pt_dtv.append("Ok")
-                            elif colonne == "NUM_LIMIT":
+                            if colonne == "ID_VILLAGE":
                                 if champ.length() != 50:
                                     taille_pt_dtv.append("No")
                                     resultat_analyse.append("Non conforme")
@@ -846,7 +881,28 @@ def display_pamofor(zip_file, feature, parent):
                                     print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
                                 else:
                                     taille_pt_dtv.append("Ok")
-                            elif colonne == "NUM_LIMIT":
+                            elif colonne == "NUM_SOMMET":
+                                if champ.length() != 50:
+                                    taille_pt_dtv.append("No")
+                                    resultat_analyse.append("Non conforme")
+                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                else:
+                                    taille_pt_dtv.append("Ok")
+                            elif colonne == "TYP_LEVE":
+                                if champ.length() != 50:
+                                    taille_pt_dtv.append("No")
+                                    resultat_analyse.append("Non conforme")
+                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                else:
+                                    taille_pt_dtv.append("Ok")
+                            elif colonne == "TYP_SOMMET":
+                                if champ.length() != 50:
+                                    taille_pt_dtv.append("No")
+                                    resultat_analyse.append("Non conforme")
+                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                else:
+                                    taille_pt_dtv.append("Ok")
+                            elif colonne == "NUM_TRONC":
                                 if champ.length() != 50:
                                     taille_pt_dtv.append("No")
                                     resultat_analyse.append("Non conforme")
@@ -860,6 +916,13 @@ def display_pamofor(zip_file, feature, parent):
                                     print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
                                 else:
                                     taille_pt_dtv.append("Ok")
+                            elif colonne == "NOM_PROJET":
+                                if champ.length() != 50:
+                                    taille_pt_dtv.append("No")
+                                    resultat_analyse.append("Non conforme")
+                                    print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
+                                else:
+                                    taille_pt_dtv.append("Ok")
                             elif colonne == "NOM_OTA":
                                 if champ.length() != 50:
                                     taille_pt_dtv.append("No")
@@ -867,11 +930,10 @@ def display_pamofor(zip_file, feature, parent):
                                     print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (50).".format(colonne, champ.length()))
                                 else:
                                     taille_pt_dtv.append("Ok")
-                            else:
-                                taille_pt_cf.append("Ok")
-                                #print("Colonne '{}': Longueur = {}".format(colonne,  champ.length()))
+                            
+                        elif champ.type() == QVariant.Double:
+                            taille_pt_dtv.append("Ok")
                         
-                                #print("Colonne '{}': Longueur = {}.{}".format(colonne,  champ.length(), precision))
                     #print(forma_pt_dtv)
                     #print(taille_pt_dtv)
                     if "No" in forma_pt_dtv and "No" in taille_pt_dtv:
@@ -887,7 +949,7 @@ def display_pamofor(zip_file, feature, parent):
     print("-" * 118)
     #print("-------------- V11: VERIFICATION DES CHAMPS OBLIGATOIRES DES COLONNES  DU POLYGONE --------------")
     polygon_oblig = []
-    troncon_oblig = []
+    #troncon_oblig = []
     extensions_supportees = ['.shp','.SHP']
     fichiers = os.listdir(output_folder)
     for fichier in fichiers:
@@ -914,24 +976,24 @@ def display_pamofor(zip_file, feature, parent):
                     print("Tous les champs obligatoires du polygone ne sont pas remplis par des valeurs")
                 else:
                     print("Tous les champs obligatoires du polygone sont remplis par des valeurs.")
-            elif polygon_couche.geometryType() == QgsWkbTypes.LineGeometry:
-                print("-------------- Vérifier que tous les champs obligatoires du tronçon sont remplis par des valeurs --------------")
-                for colonne  in polygon_couche.fields().names():
-                    # verifier les valeurs des champs
-                    for entite in polygon_couche.getFeatures():
-                        if colonne == "TYPE_NATUR":
-                           if str(entite[colonne]) == "NULL" or str(entite[colonne]) is None:
-                               troncon_oblig.append("Ok")
-                        elif str(entite[colonne]) == "NULL" or str(entite[colonne]) is None:
-                            resultat_analyse.append("Non conforme")
-                            troncon_oblig.append("No")
-                            print(f"==>000 Le(s) champ(s) '{colonne}' contient une valeur nulle à la ligne {entite.id() +1}.")
-                        else:
-                            troncon_oblig.append("Ok")
-                if "No" in troncon_oblig:
-                    print("Tous les champs obligatoires du tronçon ne sont pas remplis par des valeurs.")
-                else:
-                    print("Tous les champs obligatoires du tronçon sont remplis par des valeurs.")
+            #elif polygon_couche.geometryType() == QgsWkbTypes.LineGeometry:
+            #    print("-------------- Vérifier que tous les champs obligatoires du tronçon sont remplis par des valeurs --------------")
+            #    for colonne  in polygon_couche.fields().names():
+            #        # verifier les valeurs des champs
+            #        for entite in polygon_couche.getFeatures():
+            #            if colonne == "TYPE_NATUR":
+            #               if str(entite[colonne]) == "NULL" or str(entite[colonne]) is None:
+            #                   troncon_oblig.append("Ok")
+            #            elif str(entite[colonne]) == "NULL" or str(entite[colonne]) is None:
+            #                resultat_analyse.append("Non conforme")
+            #                troncon_oblig.append("No")
+            #                print(f"==>000 Le(s) champ(s) '{colonne}' contient une valeur nulle à la ligne {entite.id() +1}.")
+            #            else:
+            #                troncon_oblig.append("Ok")
+            #    if "No" in troncon_oblig:
+            #        print("Tous les champs obligatoires du tronçon ne sont pas remplis par des valeurs.")
+            #    else:
+            #        print("Tous les champs obligatoires du tronçon sont remplis par des valeurs.")
     print(" ")
     print("-" * 118)
     print("-------------- Vérifier que tous les champs obligatoires du point sont remplis par des valeurs --------------")
@@ -963,9 +1025,148 @@ def display_pamofor(zip_file, feature, parent):
                 else:
                     print("Tous les champs obligatoires du point sont remplis par des valeurs.")
     print(" ")
+    print("-" * 114)
+    print("-------------- Le nombre de points doit être identique au nombre de sommets des parcelles --------------")
+    nombre_points = 0
+    nombre_sommets = 0
+    for fichier in fichiers:
+        if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
+            chemin_fichier = os.path.join(output_folder, fichier)
+            nom_couche_point = os.path.splitext(fichier)[0]
+            couche = QgsVectorLayer(chemin_fichier, nom_couche_point, 'ogr')
+            if couche.geometryType() == QgsWkbTypes.PointGeometry:
+                nbre_point = couche.featureCount()
+                nombre_points += nbre_point
+            # Calculer le nombre de point de la couche polygone
+            elif couche.geometryType() == QgsWkbTypes.PolygonGeometry:
+                for entite in couche.getFeatures():
+                    geom = entite.geometry()
+                    if geom.type() == QgsWkbTypes.PolygonGeometry:
+                         polygone = geom.asMultiPolygon()[0]
+                         for point in polygone:
+                             nombre_sommets += len(point)
+    #print(nombre_points)
+    #print(nombre_sommets)
+    if nombre_points == nombre_sommets:
+        print("Le nombre de points est identique au nombre de sommets des parcelles.")
+    else:
+        resultat_analyse.append("Non conforme")
+        print("==>000 Le nombre de points n'est pas identique au nombre de sommets des parcelles")
+    
+    
+    
+    print(" ")
+    print("-" * 114)
+    print("-------------- Les coordonnées des points doivent obligatoirement épouser (tolérance 0) les sommets des polygones parcelle --------------")
+    TOLERANCE = 0.0
+    coord_points = []
+    resultat_distance = []
+    for fichier in fichiers:
+        if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
+            chemin_fichier = os.path.join(output_folder, fichier)
+            nom_couche_point = os.path.splitext(fichier)[0]
+            couche = QgsVectorLayer(chemin_fichier, nom_couche_point, 'ogr')
+            if couche.geometryType() == QgsWkbTypes.PointGeometry:
+                # Récupérer les coordonnées du premier point de la première entité
+                for entite in couche.getFeatures():
+                    point_geometry = entite.geometry()
+                    point_coords = point_geometry.asPoint()
+                    x_p, y_p = round(point_coords.x(), 2), round(point_coords.y(), 2)
+                    coord_point = Point(x_p, y_p)
+                    coord_points.append(coord_point)
+                    #print(f"Point: {point}")
+                    #print("Coordonnées du point {} : {}, {}".format(numero_pt, round(x_p, 2), round(y_p, 2)))
+                    
+                    #points.append(point_coords)
+            # Calculer le nombre de point de la couche polygone
+            elif couche.geometryType() == QgsWkbTypes.PolygonGeometry:
+                # Récupérer les sommets du premier polygone de la première entité
+                for entite in couche.getFeatures():
+                    poly_geom = entite.geometry()
+                    for polygon in poly_geom.asMultiPolygon():
+                        for sommet in polygon:
+                            for point in sommet:
+                                x_s, y_s = round(point.x(), 2), round(point.y(), 2)
+                                sommet_p = Point(x_s, y_s)
+                                #print(f" Les points: {coord_points}")
+                                #break
+                                # Calculer la distance pour chaque point par rapport aux sommets des polygones
+                                for coord in coord_points:
+                                    if coord.equals(sommet_p):
+                                        # Calculer la distance entre le point et le sommet
+                                        distance = math.sqrt((coord.x - x_s)**2 + (coord.y - y_s)**2)
+                                        resultat_distance.append(distance)
+                                        if distance != 0:
+                                            resultat_distance.append(distance)
+    
+    # Vérification de la tolérance
+    verification = set()
+    for resultat in resultat_distance:
+        if resultat == TOLERANCE:
+            verification.add("Ok")
+        else:
+            verification.add("No")
+    if "Ok" in verification and "No" not in verification:
+        print("Les coordonnées des points épousent les sommets des polygones parcelle")
+    else:
+        resultat_analyse.append("Non conforme")
+        print("==>000 Les coordonnées des points n'épousent pas les sommets des polygones parcelle")
+    
+    print(" ")
+    print("-" * 114)
+    print("-------------- Les sommets sont en doublon dans la couche des polygones --------------")
+    sommets = []
+    for fichier in fichiers:
+        if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
+            chemin_fichier = os.path.join(output_folder, fichier)
+            nom_couche_point = os.path.splitext(fichier)[0]
+            couche = QgsVectorLayer(chemin_fichier, nom_couche_point, 'ogr')
+            if couche.geometryType() == QgsWkbTypes.PolygonGeometry:
+                # Récupérer les sommets du premier polygone de la première entité
+                for entite in couche.getFeatures():
+                    poly_geom = entite.geometry()
+                    for sommet in poly_geom.asMultiPolygon():
+                        for point in sommet:
+                            for coord in point:
+                                x_s, y_s = round(coord.x(), 2), round(coord.y(), 2)
+                                sommet_p = Point(x_s, y_s)
+                                sommets.append(sommet_p)
+    # Initialiser un ensemble pour stocker les coordonnées uniques
+    coordonnees_uniques = []
+    # Initialiser une liste pour stocker les coordonnées en double
+    coordonnees_en_double = []
+    # Parcourir la liste des sommets
+    for sommet in sommets:
+        # Convertir l'objet CoordinateSequence en une liste de tuples
+        coordonnees = [tuple(coord) for coord in sommet.coords]
+        # Vérifier si la coordonnée est déjà présente dans l'ensemble
+        if coordonnees  in coordonnees_uniques:
+            coordonnees_en_double.append(coordonnees)
+        else:
+            # Ajouter la coordonnée à l'ensemble si elle n'est pas déjà présente
+            coordonnees_uniques.append(coordonnees)
+    
+    
+    # Afficher les coordonnées en double
+    if coordonnees_en_double:
+        #print("Coordonnées en double :")
+        for coord in coordonnees_en_double:
+            #print(coord)
+            resultat_analyse.append("Non conforme")
+            print("==>000 Les sommets sont en doublons dans la couche des polygones.")
+            break
+    else:
+        print("Les sommets  ne sont pas en doublon dans la couche des polygones")
+    
+    
+    
+    
+    print(" ")
     print("-" * 118)
     print("-------------- Décision de l'analyse --------------")
     if "Non conforme" in resultat_analyse:
         print("Les données chargées sont invalides car elles contiennent {} points de contrôle non conforme.\n\tVeuillez consulter ces points ci-dessus, précédés par ==>000.".format(len(resultat_analyse)))
     else:
         print("-------> 'Les données chargées sont valides.' <-------")
+        
+    return None

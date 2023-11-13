@@ -5,6 +5,9 @@ from zipfile import ZipFile
 import os
 import re
 from qgis.PyQt.QtCore import QVariant
+import math
+from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon
 
 
 @qgsfunction(args='auto', group='Custom')
@@ -335,7 +338,7 @@ def display_hors_pamofor(dossier, feature, parent):
     print("-------------- Vérifier que le format des colonnes du polygone est respecté --------------")
     extensions_supportees = [".shp", ".SHP"]
     colonnes_requises = [
-        'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF','NOM_VILLAG', 'NOM_DEMAND', 'NOM_PROJET', 'NOM_OTA', 'SUPERF']
+        'NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF','NOM_VILLAG', 'NOM_DEMAND', 'NOM_OTA', 'SUPERF']
     colonnes_requises_hp = ['NOM_REGION', 'NOM_DEPART', 'NOM_SSPREF','NOM_VILLAG', 'NOM_PROJET', 'NOM_OTA', 'SUPERF']
     for fichier in os.listdir(output_folder):
         if os.path.splitext(fichier)[-1].lower() in extensions_supportees:
@@ -372,7 +375,7 @@ def display_hors_pamofor(dossier, feature, parent):
                             # Vérifier si le champ est de type String
                             if champ.type() == QVariant.String:
                                 if colonne == "NOM_DEMAND":
-                                    if champ.length() != 100:
+                                    if not champ.length() <= 100:
                                         taille_cf.append("No")
                                         resultat_analyse.append("Non conforme")
                                         print("==>000 La taille de colonne '{}' est = {}, elle ne respecte pas la taille attendue (100).".format(colonne, champ.length()))
@@ -387,7 +390,7 @@ def display_hors_pamofor(dossier, feature, parent):
                                     #print("Colonne '{}': Longueur = {}".format(colonne,  champ.length()))
                             elif champ.type() == QVariant.Double:
                                 precision = champ.precision()
-                                if champ.length() != 20 and precision != 4:
+                                if not champ.length() <= 20 and precision != 4:
                                     taille_cf.append("No")
                                     resultat_analyse.append("Non conforme")
                                     print("==>000 La taille de colonne '{}' est = {} avec une précision de {}, elle ne respecte pas la taille (20) et la précision (2) attendues.".format(colonne, champ.length(), precision))
@@ -440,7 +443,7 @@ def display_hors_pamofor(dossier, feature, parent):
                                     #print("Colonne '{}': Longueur = {}".format(colonne,  champ.length()))
                             elif champ.type() == QVariant.Double:
                                 precision = champ.precision()
-                                if champ.length() != 20 and precision != 2:
+                                if not champ.length() <= 20 and precision != 4:
                                     taille_dtv.append("No")
                                     resultat_analyse.append("Non conforme")
                                     print("==>000 La taille de colonne '{}' est = {} avec une précision de {}, elle ne respecte pas la taille (20) et la précision (2) attendues.".format(colonne, champ.length(), precision))
@@ -506,7 +509,7 @@ def display_hors_pamofor(dossier, feature, parent):
                                     #print("Colonne '{}': Longueur = {}".format(colonne,  champ.length()))
                             elif champ.type() == QVariant.Double:
                                 precision = champ.precision()
-                                if champ.length() != 20 and precision != 10:
+                                if not champ.length() <= 20 and not precision <= 10:
                                     taille.append("No")
                                     resultat_analyse.append("Non conforme")
                                     print("==>000 La taille de colonne '{}' est = {} avec une précision de {}, elle ne respecte pas la taille (20) et la précision (10) attendues.".format(colonne, champ.length(), precision))
@@ -545,6 +548,9 @@ def display_hors_pamofor(dossier, feature, parent):
                             resultat_analyse.append("Non conforme")
                             value_null.add("No")
                             print(f"==>000 Le champ '{colonne}' contient une valeur nulle à la ligne {entite.id() +1}.")
+                        elif colonne == "SUPERF":
+                            if str(entite[colonne]) == "NULL" or str(entite[colonne]) is None:
+                              value_null.add("Ok")  
                         else:
                             value_null.add("Ok")
                             #print(f"Le champ '{colonne}' est conforme car il ne contient pas de valeurs nulles.")
@@ -588,14 +594,203 @@ def display_hors_pamofor(dossier, feature, parent):
     else:
         print("Tous les champs obligatoires du point sont remplis par des valeurs.")                
                                 
+    print(" ")
+    print("-" * 114)
+    print("-------------- Le nombre de points doit être identique au nombre de sommets des parcelles --------------")
+    nombre_points = 0
+    nombre_sommets = 0
+    zip_file_name = os.path.splitext(dossier)[0]
+    # Créez un dossier pour sauvegarder le contenu du ZIP s'il n'existe pas déjà
+    output_folder = os.path.join(os.path.dirname(dossier), zip_file_name)
+    # output_folder est le dossier de sauvegarde du contenu du ZIP
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    with ZipFile(dossier, 'r') as zipfile:
+        # Décompression du fichier zip
+        zipfile.extractall(output_folder)
+    extension = [".shp", ".SHP"]
+    # Vérification de la validité du chemin des fichiers
+    if not output_folder:
+        raise ValueError("Le chemin des couches est vide")
+    # Parcourir les fichiers du dossier
+    for fichier in os.listdir(output_folder):
+        chemin_fichier = os.path.join(output_folder, fichier)
+        # Vérifier si le fichier a une extension de shapefile
+        if os.path.isfile(chemin_fichier) and any(fichier.endswith(ext) for ext in extension):
+            # Extraire le nom de fichier sans extension pour le nom de la couche
+            nom_couche = os.path.splitext(fichier)[0]
+            # Charger la couche vecteur depuis le shapefile
+            couche = QgsVectorLayer(chemin_fichier, nom_couche, "ogr")
+            # Calculer le nombre de point de la couche point
+            if couche.geometryType() == QgsWkbTypes.PointGeometry:
+                nbre_point = couche.featureCount()
+                nombre_points += nbre_point
+            # Calculer le nombre de point de la couche polygone
+            elif couche.geometryType() == QgsWkbTypes.PolygonGeometry:
+                for entite in couche.getFeatures():
+                    geom = entite.geometry()
+                    if geom.type() == QgsWkbTypes.PolygonGeometry:
+                         polygone = geom.asMultiPolygon()[0]
+                         for point in polygone:
+                             nombre_sommets += len(point)
+    #print(nombre_points)
+    #print(nombre_sommets)
+    if nombre_points == nombre_sommets:
+        print("Le nombre de points est identique au nombre de sommets des parcelles.")
+    else:
+        resultat_analyse.append("Non conforme")
+        print("==>000 Le nombre de points n'est pas identique au nombre de sommets des parcelles")
+              
+    
+    print(" ")
+    print("-" * 114)
+    print("-------------- Les coordonnées des points doivent obligatoirement épouser (tolérance 0) les sommets des polygones parcelle --------------")
+    TOLERANCE = 0.0
+    coord_points = []
+    resultat_distance = []
+    zip_file_name = os.path.splitext(dossier)[0]
+    # Créez un dossier pour sauvegarder le contenu du ZIP s'il n'existe pas déjà
+    output_folder = os.path.join(os.path.dirname(dossier), zip_file_name)
+    # output_folder est le dossier de sauvegarde du contenu du ZIP
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    with ZipFile(dossier, 'r') as zipfile:
+        # Décompression du fichier zip
+        zipfile.extractall(output_folder)
+    extension = [".shp", ".SHP"]
+    # Vérification de la validité du chemin des fichiers
+    if not output_folder:
+        raise ValueError("Le chemin des couches est vide")
+    # Parcourir les fichiers du dossier
+    for fichier in os.listdir(output_folder):
+        chemin_fichier = os.path.join(output_folder, fichier)
+        # Vérifier si le fichier a une extension de shapefile
+        if os.path.isfile(chemin_fichier) and any(fichier.endswith(ext) for ext in extension):
+            # Extraire le nom de fichier sans extension pour le nom de la couche
+            nom_couche = os.path.splitext(fichier)[0]
+            # Charger la couche vecteur depuis le shapefile
+            couche = QgsVectorLayer(chemin_fichier, nom_couche, "ogr")
+            geom_layer = couche.wkbType()
+            # Calculer le nombre de point de la couche point
+            if couche.geometryType() == QgsWkbTypes.PointGeometry:
+                # Récupérer les coordonnées du premier point de la première entité
+                for entite in couche.getFeatures():
+                    point_geometry = entite.geometry()
+                    point_coords = point_geometry.asPoint()
+                    x_p, y_p = round(point_coords.x(), 2), round(point_coords.y(), 2)
+                    coord_point = Point(x_p, y_p)
+                    coord_points.append(coord_point)
+                    #print(f"Point: {point}")
+                    #print("Coordonnées du point {} : {}, {}".format(numero_pt, round(x_p, 2), round(y_p, 2)))
+                    
+                    #points.append(point_coords)
+            # Calculer le nombre de point de la couche polygone
+            elif couche.geometryType() == QgsWkbTypes.PolygonGeometry:
+                # Récupérer les sommets du premier polygone de la première entité
+                for entite in couche.getFeatures():
+                    poly_geom = entite.geometry()
+                    for polygon in poly_geom.asMultiPolygon():
+                        for sommet in polygon:
+                            for point in sommet:
+                                x_s, y_s = round(point.x(), 2), round(point.y(), 2)
+                                sommet_p = Point(x_s, y_s)
+                                #print(f" Les points: {coord_points}")
+                                #break
+                                # Calculer la distance pour chaque point par rapport aux sommets des polygones
+                                for coord in coord_points:
+                                    if coord.equals(sommet_p):
+                                        # Calculer la distance entre le point et le sommet
+                                        distance = math.sqrt((coord.x - x_s)**2 + (coord.y - y_s)**2)
+                                        resultat_distance.append(distance)
+                                        if distance != 0:
+                                            resultat_distance.append(distance)
+                                        #print(distance)
+                                        #print(f"Distance entre le point {coord_point} et le sommet ({x_s}, {y_s}): {distance}")
+    # Vérification de la tolérance
+    verification = set()
+    for resultat in resultat_distance:
+        if resultat == TOLERANCE:
+            verification.add("Ok")
+        else:
+            verification.add("No")
+    if "Ok" in verification and "No" not in verification:
+        print("Les coordonnées des points épousent les sommets des polygones parcelle")
+    else:
+        resultat_analyse.append("Non conforme")
+        print("==>000 Les coordonnées des points n'épousent pas les sommets des polygones parcelle")
+    
+    
+    print(" ")
+    print("-" * 114)
+    print("-------------- Les sommets sont en doublon dans la couche des polygones --------------")
+    sommets = []
+    zip_file_name = os.path.splitext(dossier)[0]
+    # Créez un dossier pour sauvegarder le contenu du ZIP s'il n'existe pas déjà
+    output_folder = os.path.join(os.path.dirname(dossier), zip_file_name)
+    # output_folder est le dossier de sauvegarde du contenu du ZIP
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    with ZipFile(dossier, 'r') as zipfile:
+        # Décompression du fichier zip
+        zipfile.extractall(output_folder)
+    extension = [".shp", ".SHP"]
+    # Vérification de la validité du chemin des fichiers
+    if not output_folder:
+        raise ValueError("Le chemin des couches est vide")
+    # Parcourir les fichiers du dossier
+    for fichier in os.listdir(output_folder):
+        chemin_fichier = os.path.join(output_folder, fichier)
+        # Vérifier si le fichier a une extension de shapefile
+        if os.path.isfile(chemin_fichier) and any(fichier.endswith(ext) for ext in extension):
+            # Extraire le nom de fichier sans extension pour le nom de la couche
+            nom_couche = os.path.splitext(fichier)[0]
+            # Charger la couche vecteur depuis le shapefile
+            couche = QgsVectorLayer(chemin_fichier, nom_couche, "ogr")
+            # identifier les sommets doubles de la couche polygone
+            if couche.geometryType() == QgsWkbTypes.PolygonGeometry:
+                # Récupérer les sommets du premier polygone de la première entité
+                for entite in couche.getFeatures():
+                    poly_geom = entite.geometry()
+                    for sommet in poly_geom.asMultiPolygon():
+                        for point in sommet:
+                            for coord in point:
+                                x_s, y_s = round(coord.x(), 2), round(coord.y(), 2)
+                                sommet_p = Point(x_s, y_s)
+                                sommets.append(sommet_p)
+    # Initialiser un ensemble pour stocker les coordonnées uniques
+    coordonnees_uniques = []
+    # Initialiser une liste pour stocker les coordonnées en double
+    coordonnees_en_double = []
+    # Parcourir la liste des sommets
+    for sommet in sommets:
+        # Convertir l'objet CoordinateSequence en une liste de tuples
+        coordonnees = [tuple(coord) for coord in sommet.coords]
+        # Vérifier si la coordonnée est déjà présente dans l'ensemble
+        if coordonnees  in coordonnees_uniques:
+            coordonnees_en_double.append(coordonnees)
+        else:
+            # Ajouter la coordonnée à l'ensemble si elle n'est pas déjà présente
+            coordonnees_uniques.append(coordonnees)
+    
+    
+    # Afficher les coordonnées en double
+    if coordonnees_en_double:
+        #print("Coordonnées en double :")
+        for coord in coordonnees_en_double:
+            #print(coord)
+            resultat_analyse.append("Non conforme")
+            print("==>000 Les sommets sont en doublons dans la couche des polygones.")
+            break
+    else:
+        print("Les sommets  ne sont pas en doublon dans la couche des polygones")
     
     print(" ")
     print("-" * 114)
     print("-------------- Décision finale de l'analyse --------------")
     #print(resultat_analyse)
     if "Non conforme" in resultat_analyse:
-        print("Les données chargées sont invalides car elles contiennent {} points de contrôle non conforme.\n\t---> Veuillez consulter ces points de contrôle ci dessus précédés par ==>000".format(len(resultat_analyse)))
+        print("Les données chargées sont invalides car elles contiennent {} point(s) de contrôle non conforme.\n\t---> Veuillez consulter ces points de contrôle ci dessus précédés par ==>000".format(len(resultat_analyse)))
     else:
         print("\t----> 'Les données chargées sont valides.' <----")
     
-    return 0
+    return None
